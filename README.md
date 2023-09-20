@@ -13,8 +13,3 @@ GooberOS boots in about a second (without sacrificing functionality), while Open
 ## Installation
 Boot from an OpenOS floppy disk and enter `pastebin run 5qgkbkyc` into the command prompt. \
 After that, just follow everything the installers tells you and you're good to go!
-
-## Screenshots
-![Custom loading screen](https://cdn.discordapp.com/attachments/1138429515400478780/1154155225062580294/image.png)
-![Custom installer](https://cdn.discordapp.com/attachments/1138429515400478780/1154155667620368455/image.png)
-![Custom shell](https://cdn.discordapp.com/attachments/1138429515400478780/1154155490964676679/image.png)
