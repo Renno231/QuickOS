@@ -1,6 +1,6 @@
 local raw_loadfile = ...
 
-_G._OSVERSION = "GooberOS 1.0.0"
+_G._OSVERSION = "GooberOS 1.1.0"
 
 local component = component
 local computer = computer
@@ -48,7 +48,7 @@ centerText(logoY+3, "██║   ██║██║   ██║██║   █�
 centerText(logoY+4, "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝███████╗██║  ██║╚██████╔╝███████║")
 centerText(logoY+5, " ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝")
 gpu.setForeground(0xFFFFFF)
-centerText(logoY+6, "         Version 1.0.0 made by TheAirBlow (based on OpenOS)         ")
+centerText(logoY+6, "         Version 1.1.0 made by TheAirBlow (based on OpenOS)         ")
 local baseY = logoY+7
 gpu.setForeground(0x3D3D3D)
 centerText(baseY+3, "██████████████████████████████████████████████████")
@@ -130,9 +130,9 @@ end
 gpu.fill(1, baseY+1, w, 1, " ")
 gpu.fill(1, baseY+3, w, 1, " ")
 local filesystem = require("filesystem")
-if filesystem.exists("/bin/main.lua") then
+if filesystem.exists("/home/main.lua") then
   centerText(baseY+1, "The main application is now running.")
-  local status, err = pcall(function() dofile("/bin/main.lua") end)
+  local status, err = pcall(function() dofile("/home/main.lua") end)
   if not status then
     centerText(baseY+3, "Please reboot and open terminal!")
     gpu.fill(1, baseY+1, w, 1, " ")
@@ -141,7 +141,7 @@ if filesystem.exists("/bin/main.lua") then
     centerText(baseY+1, "The main application finished running.")
   end
 else
-  centerText(baseY+1, "/bin/main.lua is missing, please reboot and open terminal!")
+  centerText(baseY+1, "/home/main.lua is missing, please reboot and open terminal!")
 end
 
 local event = require("event")

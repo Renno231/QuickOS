@@ -22,7 +22,7 @@ gpu.set(logoX, logoY+3, "██║   ██║██║   ██║██║   �
 gpu.set(logoX, logoY+4, "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝███████╗██║  ██║╚██████╔╝███████║")
 gpu.set(logoX, logoY+5, " ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝")
 gpu.setForeground(0xFFFFFF)
-gpu.set(logoX, logoY+6, "            Installation Wizard 1.1.0 made by TheAirBlow            ")
+gpu.set(logoX, logoY+6, "            Installation Wizard 1.2.0 made by TheAirBlow            ")
 
 local function drawStatus(str, offset, color)
   local x = (w-utf8.len(str))/2+1
@@ -46,7 +46,7 @@ local function quit(reason)
   io.write(reason)
 end
 
-local cdn = "https://oc.sussy.dev/gooberos"
+local cdn = "https://git.sussy.dev/TheAirBlow/GooberOS/-/raw/main"
 local isGooberOS = string.find(_G._OSVERSION, "GooberOS")
 local event = require("event")
 local web = not isGooberOS
@@ -166,7 +166,6 @@ elseif web then
 end
 
 local exclusions = {
-  ["/bin/main.lua"] = true,
   ["/home/"] = true,
   ["/tmp/"] = true,
   ["/dev/"] = true,
@@ -198,7 +197,7 @@ function listAll(src)
     end
 
     io.write(fullList)
-    local line = "/"
+    local line = ""
     local len = #fullList
     local perChar = 50/len
     for i = 1, len do
@@ -210,7 +209,7 @@ function listAll(src)
       if char == "\n" then
         table.insert(list, line)
         total = total + 1
-        line = "/"
+        line = ""
       else
         line = line .. char
       end
