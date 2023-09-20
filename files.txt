@@ -46,7 +46,6 @@
 /etc/rc.cfg
 /etc/rc.d/example.lua
 /etc/rc.d/files.txt
-/genlist.sh
 /home/.shrc
 /init.lua
 /lib/bit32.lua
