@@ -196,7 +196,6 @@ function listAll(src)
       return nil, "Failed to fetch the file list!"
     end
 
-    io.write(fullList)
     local line = ""
     local len = #fullList
     local perChar = 50/len
