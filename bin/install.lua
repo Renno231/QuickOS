@@ -67,14 +67,9 @@ for dev, path in fs.mounts() do
   end
 end
 
-devices[fs.get("/")] = nil
 devices[fs.get("/dev")] = nil
 devices[fs.get("/tmp")] = nil
 
-if isGooberOS then
-  table.insert(targets, {dev = fs.get("/"), path = "/"})
-  found = found + 1
-end
 for dev, path in pairs(devices) do
   if path ~= nil and not dev.isReadOnly() then
     table.insert(targets, {dev = dev, path = path})
