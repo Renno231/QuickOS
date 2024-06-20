@@ -44,9 +44,7 @@
 /etc/edit.cfg
 /etc/profile.lua
 /etc/rc.cfg
-/etc/rc.d/example.lua
 /etc/rc.d/files.txt
-/home/.shrc
 /init.lua
 /lib/bit32.lua
 /lib/buffer.lua
