@@ -412,18 +412,6 @@ local function onComponentAdded(_, address, componentType)
       end
       name = fs.concat("/mnt", name)
       fs.mount(proxy, name)
-      if not fs.exists("/etc/filesystem.cfg") or fs.isAutorunEnabled() then
-        local file = shell.resolve(fs.concat(name, "autorun"), "lua") or
-                      shell.resolve(fs.concat(name, ".autorun"), "lua")
-        if file then
-          local run = {file, _ENV, proxy}
-          if pendingAutoruns then
-            table.insert(pendingAutoruns, run)
-          else
-            xpcall(shell.execute, event.onError, table.unpack(run))
-          end
-        end
-      end
     end
   end
 end
@@ -521,7 +509,7 @@ event.listen("component_unavailable", components_changed)
 if require("filesystem").exists("/etc/hostname") then
   loadfile("/bin/hostname.lua")("--update")
 end
-os.setenv("SHELL","/bin/sh.lua")
+os.setenv("SHELL", "/bin/sh.lua")
 
 -- Push component_added signal for every component
 for c, t in component.list() do

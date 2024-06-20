@@ -1,6 +1,6 @@
 local raw_loadfile = ...
 
-_G._OSVERSION = "GooberOS 1.1.0"
+_G._OSVERSION = "GooberOS 1.2.0"
 
 local component = component
 local computer = computer
@@ -86,18 +86,7 @@ end
 require("filesystem").mount(computer.getBootAddress(), "/")
 dofile("base.lua")
 
-centerText(baseY+1, "Hold \"Ctrl+Shift\" to open terminal")
-gpu.setForeground(0x3D3D3D)
-centerText(baseY+3, "██████████████████████████████████████████████████")
-gpu.setForeground(0xFFFF00)
-for i=1,10 do
-  gpu.set((w-50)/2+1+(i-1)*5, baseY+3, "█████")
-  os.sleep(0.1)
-end
-
-gpu.setForeground(0xFFFFFF)
-local keyboard = require("keyboard")
-if keyboard.isShiftDown() and keyboard.isControlDown() then
+function shell()
   local term = require("term")
   pwd = io.open("/home/.pwd")
   if pwd ~= nil then
@@ -131,6 +120,22 @@ gpu.fill(1, baseY+1, w, 1, " ")
 gpu.fill(1, baseY+3, w, 1, " ")
 local filesystem = require("filesystem")
 if filesystem.exists("/home/main.lua") then
+  centerText(baseY+1, "Hold \"Ctrl+Shift\" to open terminal")
+  gpu.setForeground(0x3D3D3D)
+  centerText(baseY+3, "██████████████████████████████████████████████████")
+  gpu.setForeground(0xFFFF00)
+  for i=1,10 do
+    gpu.set((w-50)/2+1+(i-1)*5, baseY+3, "█████")
+    os.sleep(0.1)
+  end
+  
+  gpu.setForeground(0xFFFFFF)
+  local keyboard = require("keyboard")
+  if keyboard.isShiftDown() and keyboard.isControlDown() then
+    shell()
+    return
+  end
+
   centerText(baseY+1, "The main application is now running.")
   local status, err = pcall(function() dofile("/home/main.lua") end)
   if not status then
@@ -141,7 +146,7 @@ if filesystem.exists("/home/main.lua") then
     centerText(baseY+1, "The main application finished running.")
   end
 else
-  centerText(baseY+1, "/home/main.lua is missing, please reboot and open terminal!")
+  shell()
 end
 
 local event = require("event")

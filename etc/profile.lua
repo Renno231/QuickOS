@@ -9,6 +9,7 @@ if tty.isAvailable() then
   end
 end
 
+shell.setAlias("nano", "edit")
 shell.setAlias("dir", "ls")
 shell.setAlias("move", "mv")
 shell.setAlias("rename", "mv")
