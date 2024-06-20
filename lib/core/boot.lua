@@ -116,10 +116,10 @@ function shell()
   computer.shutdown(true)
 end
 
-gpu.fill(1, baseY+1, w, 1, " ")
-gpu.fill(1, baseY+3, w, 1, " ")
 local filesystem = require("filesystem")
 if filesystem.exists("/home/main.lua") then
+  gpu.fill(1, baseY+1, w, 1, " ")
+  gpu.fill(1, baseY+3, w, 1, " ")
   centerText(baseY+1, "Hold \"Ctrl+Shift\" to open terminal")
   gpu.setForeground(0x3D3D3D)
   centerText(baseY+3, "██████████████████████████████████████████████████")
