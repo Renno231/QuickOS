@@ -180,7 +180,7 @@ function listAll(src)
     gpu.setBackground(0x181818)
     drawStatus("(this process might take a bit of time)", 2, 0x757575)
     drawStatus("", 2)
-    local result, response = pcall(internet.request, cdn .. "/files.txt")
+    local result, response = pcall(internet.request, cdn .. "/files.txt", nil, {["User-Agent"]="Wget/OpenComputers"})
     local fullList = ""
     if result then
       for chunk in response do
@@ -296,7 +296,7 @@ for _,path in pairs(files) do
     end
 
     local url = cdn .. path
-    local result, response = pcall(internet.request, url)
+    local result, response = pcall(internet.request, url, nil, {["User-Agent"]="Wget/OpenComputers"})
     if result then
       for chunk in response do
         string.gsub(chunk, "\r\n", "\n")
