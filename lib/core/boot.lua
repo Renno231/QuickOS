@@ -19,7 +19,7 @@ computer.shutdown = function(reboot)
 end
  -- need to add a way to check the config of quickos in /etc/quickos for logo == true
  -- need a way to make this GPU independent
-local w, h
+local w, h = 0, 0
 local screen = component.list("screen", true)()
 local gpu = screen and component.list("gpu", true)()
 if gpu then
@@ -38,10 +38,8 @@ else
 end
 
 local function centerText(y, str)
-    if gpu then
-        gpu.fill(1, y, w, 1, " ")
-        gpu.set((w-utf8.len(str))/2+1, y, str)
-    end
+    gpu.fill(1, y, w, 1, " ")
+    gpu.set((w-utf8.len(str))/2+1, y, str)
 end
 
 local logoY = (h-11)/2+1
