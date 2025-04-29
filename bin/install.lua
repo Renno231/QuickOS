@@ -291,6 +291,7 @@ for _,path in pairs(files) do
   else
     local f, reason = io.open(chosen.path .. path, "w")
     if not f then
+        _G.quickOSFiles = files
       quit("Error: Failed to open \"" .. chosen.path .. path .. "\" for writing!")
       return
     end
