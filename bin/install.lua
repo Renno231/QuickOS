@@ -290,24 +290,26 @@ for _,path in pairs(files) do
     fs.copy(path, chosen.path .. path)
   else
     local f, reason = io.open(chosen.path .. path, "w")
-    if not f then
-        _G.quickOSFiles = files
-      quit("Error: Failed to open \"" .. chosen.path .. path .. "\" for writing!")
-      return
-    end
+    -- if not f then
+    --   quit("Error: Failed to open \"" .. chosen.path .. path .. "\" for writing!")
+    --   return
+    -- end
+    if f then
+        local url = cdn .. path
+        local result, response = pcall(internet.request, url, nil, {["User-Agent"]="Wget/OpenComputers"})
+        if result then
+            for chunk in response do
+                string.gsub(chunk, "\r\n", "\n")
+                f:write(chunk)
+            end
 
-    local url = cdn .. path
-    local result, response = pcall(internet.request, url, nil, {["User-Agent"]="Wget/OpenComputers"})
-    if result then
-      for chunk in response do
-        string.gsub(chunk, "\r\n", "\n")
-        f:write(chunk)
-      end
-
-      f:close()
+            f:close()
+        else
+            quit("Error: Failed to download \"" .. cdn .. path .. "\"!")
+            return
+        end
     else
-      quit("Error: Failed to download \"" .. cdn .. path .. "\"!")
-      return
+        drawStatus("Failed to get file object for [" .. chosen.path.."][" .. path .. "]")
     end
   end
   done = done + 1
