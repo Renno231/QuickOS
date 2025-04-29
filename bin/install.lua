@@ -46,7 +46,7 @@ local function quit(reason)
   io.write(reason)
 end
 
-local cdn = "https://git.sussy.dev/TheAirBlow/GooberOS/-/raw/main"
+local cdn = "https://raw.githubusercontent.com/Renno231/QuickOS/main"
 local isGooberOS = string.find(_G._OSVERSION, "GooberOS")
 local event = require("event")
 local web = not isGooberOS
