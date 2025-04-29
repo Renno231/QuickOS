@@ -13,16 +13,16 @@ if gpu then
 end
 
 local logoY = (h-12)/2+1
-local logoX = (w-68)/2+1
-gpu.setForeground(0x30AAEE)
-gpu.set(logoX, logoY+0, " ██████╗  ██████╗  ██████╗ ██████╗ ███████╗██████╗  ██████╗ ███████╗")
-gpu.set(logoX, logoY+1, "██╔════╝ ██╔═══██╗██╔═══██╗██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔════╝")
-gpu.set(logoX, logoY+2, "██║  ███╗██║   ██║██║   ██║██████╔╝█████╗  ██████╔╝██║   ██║███████╗")
-gpu.set(logoX, logoY+3, "██║   ██║██║   ██║██║   ██║██╔══██╗██╔══╝  ██╔══██╗██║   ██║╚════██║")
-gpu.set(logoX, logoY+4, "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝███████╗██║  ██║╚██████╔╝███████║")
-gpu.set(logoX, logoY+5, " ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝")
+local logoX = (w-61)/2+1
+gpu.setForeground(0x00ED8A)
+gpu.set(logoX, logoY+0, " ██████╗  ██╗   ██╗  ██╗  ██████╗ ██╗  ██╗  ██████╗  ███████╗")
+gpu.set(logoX, logoY+1, "██╔═══██╗ ██║   ██║  ██║ ██╔════╝ ██║ ██╔╝ ██╔═══██╗ ██╔════╝")
+gpu.set(logoX, logoY+2, "██║   ██║ ██║   ██║  ██║ ██║      █████╔╝  ██║   ██║ ███████╗")
+gpu.set(logoX, logoY+3, "██║   ██║ ██║   ██║  ██║ ██║      ██╔═██╗  ██║   ██║ ╚════██║")
+gpu.set(logoX, logoY+4, "╚██████╔╝ ████████║  ██║  ██████╗ ██║ ╚██╗ ╚██████╔╝ ███████║")
+gpu.set(logoX, logoY+5, " ╚═════╝  ╚═══════╝  ╚═╝  ╚═════╝ ╚═╝  ╚═╝  ╚═════╝  ╚══════╝") -- Q tail integrated here
 gpu.setForeground(0xFFFFFF)
-gpu.set(logoX, logoY+6, "            Installation Wizard 1.2.0 made by TheAirBlow            ")
+gpu.set(logoX, logoY+6, "            Installation Wizard 1.0.0 made by Renno231              ")
 
 local function drawStatus(str, offset, color)
   local x = (w-utf8.len(str))/2+1
@@ -47,9 +47,9 @@ local function quit(reason)
 end
 
 local cdn = "https://raw.githubusercontent.com/Renno231/QuickOS/main"
-local isGooberOS = string.find(_G._OSVERSION, "GooberOS")
+local isQuickOS = string.find(_G._OSVERSION, "QuickOS")
 local event = require("event")
-local web = not isGooberOS
+local web = not isQuickOS
 local internet = nil
 
 local comps = require("component").list("filesystem")
@@ -172,7 +172,7 @@ function listAll(src)
   local total = 0
   local list = {}
   if web and src == nil then
-    drawStatus("Downloading the GooberOS file index...")
+    drawStatus("Downloading the QuickOS file index...")
     drawStatus("", 1)
     gpu.setBackground(0x3D3D3D)
     local progressX = (w-50)/2+1
@@ -264,9 +264,9 @@ local perFile = 50 / total
 local done = 0
 drawStatus("", 1)
 if web then
-  drawStatus("(currently downloading the GooberOS files)", 2, 0x757575)
+  drawStatus("(currently downloading the QuickOS files)", 2, 0x757575)
 else
-  drawStatus("(currently copying the GooberOS files)", 2, 0x757575)
+  drawStatus("(currently copying the QuickOS files)", 2, 0x757575)
 end
 
 gpu.setBackground(0x3D3D3D)
@@ -317,7 +317,7 @@ end
 
 local computer = require("computer")
 computer.beep()
-chosen.dev.setLabel("GooberOS")
+chosen.dev.setLabel("QuickOS")
 drawStatus("The installation process successfully finished!")
 drawStatus("Would you like to make the drive bootable?", 1)
 drawStatus("(Press \"Y\" for yes, \"N\" for no)", 2, 0x757575)
