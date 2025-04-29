@@ -22,7 +22,7 @@ gpu.set(logoX, logoY+3, "██║   ██║ ██║   ██║  ██║ 
 gpu.set(logoX, logoY+4, "╚██████╔╝ ████████║  ██║  ██████╗ ██║ ╚██╗ ╚██████╔╝ ███████║")
 gpu.set(logoX, logoY+5, " ╚═════╝  ╚═══════╝  ╚═╝  ╚═════╝ ╚═╝  ╚═╝  ╚═════╝  ╚══════╝") -- Q tail integrated here
 gpu.setForeground(0xFFFFFF)
-gpu.set(logoX, logoY+6, "            Installation Wizard 1.0.0 made by Renno231              ")
+gpu.set(logoX, logoY+6, "            Installation Wizard 1.0.0 made by Renno231       ")
 
 local function drawStatus(str, offset, color)
   local x = (w-utf8.len(str))/2+1

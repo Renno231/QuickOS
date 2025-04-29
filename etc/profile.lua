@@ -38,7 +38,7 @@ os.setenv("LS_COLORS", "di=0;36:fi=0:ln=0;33:*.lua=0;32")
 
 shell.setWorkingDirectory(os.getenv("HOME"))
 
-io.write("\27[36mWelcome to " .. _G._OSVERSION .. " by TheAirBlow, based on OpenOS!\27[37m\n")
+io.write("\27[36mWelcome to " .. _G._OSVERSION .. " by Renno231, based on GooberOS (based on OpenOS)!\27[37m\n")
 io.write("\27[36mTo get help, use \"man\". Use \"install\" to run the installation wizard.\27[37m\n")
 
 if not fs.exists("/home/.pwd") then
