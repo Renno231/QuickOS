@@ -1,6 +1,6 @@
 local raw_loadfile = ...
 
-_G._OSVERSION = "GooberOS 1.2.0"
+_G._OSVERSION = "QuickOS 1.0.0"
 
 local component = component
 local computer = computer
@@ -40,15 +40,15 @@ local function centerText(y, str)
 end
 
 local logoY = (h-11)/2+1
-gpu.setForeground(0x30AAEE)
-centerText(logoY+0, " ██████╗  ██████╗  ██████╗ ██████╗ ███████╗██████╗  ██████╗ ███████╗")
-centerText(logoY+1, "██╔════╝ ██╔═══██╗██╔═══██╗██╔══██╗██╔════╝██╔══██╗██╔═══██╗██╔════╝")
-centerText(logoY+2, "██║  ███╗██║   ██║██║   ██║██████╔╝█████╗  ██████╔╝██║   ██║███████╗")
-centerText(logoY+3, "██║   ██║██║   ██║██║   ██║██╔══██╗██╔══╝  ██╔══██╗██║   ██║╚════██║")
-centerText(logoY+4, "╚██████╔╝╚██████╔╝╚██████╔╝██████╔╝███████╗██║  ██║╚██████╔╝███████║")
-centerText(logoY+5, " ╚═════╝  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝")
+gpu.setForeground(0x00ED8A)
+centerText(logoY+0, " ██████╗  ██╗   ██╗  ██╗  ██████╗ ██╗  ██╗  ██████╗  ███████╗")
+centerText(logoY+1, "██╔═══██╗ ██║   ██║  ██║ ██╔════╝ ██║ ██╔╝ ██╔═══██╗ ██╔════╝")
+centerText(logoY+2, "██║   ██║ ██║   ██║  ██║ ██║      █████╔╝  ██║   ██║ ███████╗")
+centerText(logoY+3, "██║   ██║ ██║   ██║  ██║ ██║      ██╔═██╗  ██║   ██║ ╚════██║")
+centerText(logoY+4, "╚██████╔╝ ████████║  ██║  ██████╗ ██║ ╚██╗ ╚██████╔╝ ███████║")
+centerText(logoY+5, " ╚═════╝  ╚═══════╝  ╚═╝  ╚═════╝ ╚═╝  ╚═╝  ╚═════╝  ╚══════╝")
 gpu.setForeground(0xFFFFFF)
-centerText(logoY+6, "         Version 1.1.0 made by TheAirBlow (based on OpenOS)         ")
+centerText(logoY+6, "            Installation Wizard 1.0.0 made by Renno231       ")
 local baseY = logoY+7
 gpu.setForeground(0x3D3D3D)
 centerText(baseY+3, "██████████████████████████████████████████████████")
