@@ -1,7 +1,7 @@
 # GooberOS
-This is a fork of OpenOS which automatically runs `/bin/main.lua` after booting. \
-Opening terminal would require you to hold Ctrl + Shift on boot. You can even password protect it! \
-GooberOS boots in about a second (without sacrificing functionality), while OpenOS takes 6 seconds.
+This is QuickOS, a fork of GooberOS (which is a fork of OpenOS). Currently QuickOS (QOS) additionally features a headless boot process.
+There are plans to add an operating system configuration system to allow for greater programmatic control of the OS.
+The primary feature of QuickOS, that is shared with GooberOS, is boot time of about 1 second (without sacrificing functionality), while OpenOS takes 6 seconds.
 
 ## List of changes
 1) A custom installer located at `/bin/install.lua` which can also upgrade your installation
@@ -11,5 +11,5 @@ GooberOS boots in about a second (without sacrificing functionality), while Open
 5) Fallback LUA shell in case you goof up your `.shrc` or `/etc/profile.lua`
 
 ## Installation
-Boot from an OpenOS floppy disk and enter `pastebin run 5qgkbkyc` into the command prompt. \
+Boot from an OpenOS floppy disk and enter `pastebin run T5nqX2yV` into the command prompt. \
 After that, just follow everything the installers tells you and you're good to go!
