@@ -1,7 +1,12 @@
 # GooberOS
-This is QuickOS, a fork of GooberOS (which is a fork of OpenOS). Currently QuickOS (QOS) additionally features a headless boot process.
-There are plans to add an operating system configuration system to allow for greater programmatic control of the OS.
+This is QuickOS, a fork of GooberOS (which is a fork of OpenOS). The aim of this project is to create a stable, performant, and production-ready foundation for OpenComputers programs.
+Currently QuickOS (QOS) additionally features a headless boot process.
 The primary feature of QuickOS, that is shared with GooberOS, is boot time of about 1 second (without sacrificing functionality), while OpenOS takes 6 seconds.
+The plans of this project are as follows:
+add an operating system configuration system to allow for greater programmatic control of the OS and features
+a configurable automatic update system
+an optimized installation process aiming for a speedy installation
+a headless installation
 
 ## List of changes
 1) A custom installer located at `/bin/install.lua` which can also upgrade your installation
