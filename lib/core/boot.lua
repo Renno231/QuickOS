@@ -23,18 +23,18 @@ local w, h = 0, 0
 local screen = component.list("screen", true)()
 local gpu = screen and component.list("gpu", true)()
 if gpu then
-  gpu = component.proxy(gpu)
-  if not gpu.getScreen() then
-    gpu.bind(screen)
-  end
-  _G.boot_screen = gpu.getScreen()
-  w, h = gpu.maxResolution()
-  gpu.setResolution(w, h)
-  gpu.setBackground(0x181818)
-  gpu.setForeground(0xFFFFFF)
-  gpu.fill(1, 1, w, h, " ")
+    gpu = component.proxy(gpu)
+    if not gpu.getScreen() then
+        gpu.bind(screen)
+    end
+    _G.boot_screen = gpu.getScreen()
+    w, h = gpu.maxResolution()
+    gpu.setResolution(w, h)
+    gpu.setBackground(0x181818)
+    gpu.setForeground(0xFFFFFF)
+    gpu.fill(1, 1, w, h, " ")
 else
-    gpu = setmetatable({}, {__index = function(self, index) end})
+    gpu = setmetatable({}, {__index = function(self, index) return function() end end})
 end
 
 local function centerText(y, str)
