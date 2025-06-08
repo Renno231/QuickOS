@@ -1,4 +1,4 @@
-# GooberOS
+# QuickOS
 This is QuickOS, a fork of GooberOS (which is a fork of OpenOS). The aim of this project is to create a stable, performant, and production-ready foundation for OpenComputers programs.
 Currently QuickOS (QOS) additionally features a headless boot process.
 The primary feature of QuickOS, that is shared with GooberOS, is boot time of about 1 second (without sacrificing functionality), while OpenOS takes 6 seconds.
