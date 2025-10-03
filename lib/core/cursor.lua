@@ -56,7 +56,7 @@ function core_cursor.vertical:update(arg, back)
     end
     self.data = s1
     if has_tail then
-        self:echo("\27[K") --self.clear)
+        self:echo(self.clear)
     end
   end
   self.len = unicode.len(self.data) -- recompute len
