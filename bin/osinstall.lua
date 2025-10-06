@@ -46,7 +46,7 @@ local isQuickOS = string.find(_G._OSVERSION, "QuickOS")
 local overwriteDest, web = true
 
 local qmenu, result = pcall(require, "qmenu")
-if result then
+if qmenu then
     qmenu = result --if true, it's the 2nd arg returned
 else
     if component.isAvailable("internet") then
