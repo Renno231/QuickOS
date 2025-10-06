@@ -50,7 +50,11 @@ if not qmenu then
     if component.isAvailable("internet") then
         local result, response = pcall(internet.request, cdn .. "/qmenu.lua", nil, {["User-Agent"] = "Wget/OpenComputers"})
         if result then
-            qmenu = load(result)()
+            local qmenu_mini = ""
+            for chunk in response do
+                qmenu_mini = qmenu_mini .. chunk
+            end
+            qmenu = load(qmenu_mini)()
         else
             error("Failed to download \"" .. cdn .. "/lib/qmenu.lua" .. "\"!")
         end
