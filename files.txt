@@ -47,8 +47,6 @@
 /etc/profile.lua
 /etc/rc.cfg
 /etc/rc.d/files.txt
-/genlist.py
-/home/.shrc
 /init.lua
 /lib/bit32.lua
 /lib/buffer.lua
@@ -150,5 +148,3 @@
 /usr/man/umount
 /usr/man/uptime
 /usr/man/wget
-/base.lua
-/init.lua
