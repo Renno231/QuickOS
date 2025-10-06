@@ -45,24 +45,25 @@ local cdn = "https://raw.githubusercontent.com/Renno231/QuickOS/main"
 local isQuickOS = string.find(_G._OSVERSION, "QuickOS")
 local overwriteDest, web = true
 
-local qmenu, err = pcall(require, "qmenu")
-if not qmenu then
+local qmenu, result = pcall(require, "qmenu")
+if result then
+    qmenu = result --if true, it's the 2nd arg returned
+else
     if component.isAvailable("internet") then
-        local result, response = pcall(internet.request, cdn .. "/qmenu.lua", nil, {["User-Agent"] = "Wget/OpenComputers"})
+        local result, response = pcall(internet.request, cdn .. "/lib/qmenu.lua", nil, {["User-Agent"] = "Wget/OpenComputers"})
         if result then
             local qmenu_mini = ""
             for chunk in response do
                 qmenu_mini = qmenu_mini .. chunk
             end
-            qmenu = load(qmenu_mini)()
+            -- local env = {require = require}
+            qmenu = load(qmenu_mini,"qmenu_fallback", "t", setmetatable({require=require}, {__index = _G}))()
         else
             error("Failed to download \"" .. cdn .. "/lib/qmenu.lua" .. "\"!")
         end
     else
         error("qmenu library not found and internet source is unavailable")
     end
-else
-    qmenu = err --if true, it's the 2nd arg returned
 end
 
 -- State variables
@@ -602,7 +603,6 @@ while running do
         clearScreenArea()
         status("Select a drive to install the OS onto:")
         driveMenu:draw(true)
-
         while state == "drive_selection" do
             local _, _, _, key = event.pull("key_down")
             if key == keys.q then
