@@ -395,9 +395,9 @@ local function createFileSelectionMenu(allFiles)
             local file = bucket.files[fileIndex]
             if not file then break end
 
-            local check = file.selected and "✓" or " "
+            local check = file.selected and "+" or " "
             local fileName = fs.name(file.path)
-            local option = menu:addOption(bucket.id .. fileIndex, rightPaneX, startY + 1 + i, "[" .. check .. " ] " .. fileName)
+            local option = menu:addOption(bucket.id .. fileIndex, rightPaneX, startY + 1 + i, "[" .. check .. "] " .. fileName)
             option.file, option.bucket = file, bucket
             
             option:onSelect(function(opt)
@@ -407,7 +407,7 @@ local function createFileSelectionMenu(allFiles)
             option:onActivate(function(opt)
                 if not opt.bucket.isRequired then
                     opt.file.selected = not opt.file.selected
-                    opt:text("[" .. (opt.file.selected and "✓" or " ") .. " ] " .. fs.name(opt.file.path))
+                    opt:text("[" .. (opt.file.selected and "+" or " ") .. "] " .. fs.name(opt.file.path))
                 end
             end)
 
@@ -435,8 +435,8 @@ local function createFileSelectionMenu(allFiles)
 
     local mainOptions = {}
     for i, bucket in ipairs(buckets) do
-        local check = bucket.selected and "✓" or " "
-        local option = menu:addOption(bucket.id, 2, startY + i - 1, "[" .. check .. " ] " .. bucket.name)
+        local check = bucket.selected and "+" or " "
+        local option = menu:addOption(bucket.id, 2, startY + i - 1, "[" .. check .. "] " .. bucket.name)
         option.bucket = bucket
         table.insert(mainOptions, option)
         option:setStyle("selected", isT1 and 0 or (bucket.isRequired and 0x00BFFF or 0xAAD700), isT1 and white or 0)
@@ -445,7 +445,7 @@ local function createFileSelectionMenu(allFiles)
             option:onActivate(function(opt)
                 opt.bucket.selected = not opt.bucket.selected
                 for _, file in ipairs(opt.bucket.files) do file.selected = opt.bucket.selected end
-                opt:text("[" .. (opt.bucket.selected and "✓" or " ") .. " ] " .. opt.bucket.name)
+                opt:text("[" .. (opt.bucket.selected and "+" or " ") .. "] " .. opt.bucket.name)
                 updateFilePane(opt, 0, true)
                 menu:draw()
             end)
