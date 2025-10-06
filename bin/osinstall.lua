@@ -300,7 +300,7 @@ local function createBuckets(allFiles)
         }
         if isUpgrade then
             bucket.isRequired = false
-            bucket.defaultSelected = false
+            bucket.selected = false
             if bucket.name == "Required" then
                 bucket.name = "Core Files"
             end
