@@ -15,7 +15,8 @@ a headless installation
 ## List of changes
 1) A custom installer located at `/bin/osinstall.lua` with a snappy UI and very modular configuration options
 2) A powerful custom toolkit of software made by Renno231 in the `/usr/bin` and `/usr/lib` directories
-3) Man page files are now optional and default to not included in the installation process
-4) The entire boot sequence has been optimized to minimize boot speed at the expense of the /boot/ system
-5) A custom OS loading screen and an entire password system for accessing the terminal
-6) Fallback LUA shell in case you goof up your `.shrc` or `/etc/profile.lua`
+3) Note: some of the tools in the QuickOS toolkit (line above) may not be fully tested or complete.
+4) Man page files are now optional and default to not included in the installation process
+5) The entire boot sequence has been optimized to minimize boot speed at the expense of the /boot/ system
+6) A custom OS loading screen and an entire password system for accessing the terminal
+7) Fallback LUA shell in case you goof up your `.shrc` or `/etc/profile.lua`
