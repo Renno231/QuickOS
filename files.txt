@@ -114,6 +114,9 @@
 /usr/lib/realtime.lua
 /usr/lib/screens.lua
 /usr/lib/tnet.lua
+/usr/lib/csv.lua
+/usr/lib/deltagraph.lua
+/usr/lib/streamgraph.lua
 /usr/man/address
 /usr/man/alias
 /usr/man/cat
