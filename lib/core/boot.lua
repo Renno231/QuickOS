@@ -1,6 +1,6 @@
 local raw_loadfile = ...
 
-_G._OSVERSION = "QuickOS 1.0.0"
+_G._OSVERSION = "QuickOS 1.1.0"
 
 local component = component
 local computer = computer
