@@ -1,4 +1,5 @@
 -- Basic LUA library
+local checkArg, table, tostring, assert = checkArg, table, tostring, assert
 function loadfile(filename, ...)
   if filename:sub(1,1) ~= "/" then
     filename = (os.getenv("PWD") or "/") .. "/" .. filename
@@ -125,6 +126,7 @@ end
 local computer = require("computer")
 local info = require("process").info
 local event = require("event")
+local os = os
 
 function os.getenv(varname)
   local env = info().data.vars
@@ -145,12 +147,21 @@ function os.setenv(varname, value)
   return value
 end
 
+local lastSlept = computer.uptime()
 function os.sleep(timeout)
   checkArg(1, timeout, "number", "nil")
-  local deadline = computer.uptime() + (timeout or 0)
+  lastSlept = computer.uptime()
+  local deadline = lastSlept + (timeout or 0)
   repeat
     event.pull(deadline - computer.uptime())
   until computer.uptime() >= deadline
+end
+
+function os.yield(duration)
+    duration = duration or 4
+    if computer.uptime() - lastSlept >= duration then
+        os.sleep(0.05)
+    end
 end
 
 os.setenv("PATH", "/bin:/usr/bin:/home/bin:.")
@@ -509,6 +520,10 @@ event.listen("component_unavailable", components_changed)
 if require("filesystem").exists("/etc/hostname") then
   loadfile("/bin/hostname.lua")("--update")
 end
+-- read the os settings
+-- if require("filesystem").exists("/etc/quick.cfg") then
+--   loadfile("/etc/quick.cfg")("--update")
+-- end
 os.setenv("SHELL", "/bin/sh.lua")
 
 -- Push component_added signal for every component
