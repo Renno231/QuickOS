@@ -284,7 +284,7 @@ local function createDriveSelectionMenu(drives)
 end
 
 local function createBuckets(allFiles)
-    local qTools = {"tnet.lua","api.lua","dataio.lua","realtime.lua","screens.lua","qmenu.lua","cbor.lua","hosts.lua","json.lua","liblz16.lua","lzss.lua","inventory.lua"}
+    local qTools = {"tnet.lua","api.lua","dataio.lua","realtime.lua","screens.lua","qmenu.lua","cbor.lua","hosts.lua","json.lua","liblz16.lua","lzss.lua","inventory.lua","qboot.lua"}
     local bucketDefinitions = {
         {id = "required", name = "Required",     isRequired = true,  defaultSelected = true,  matcher = function(f) return f:match("^/lib/") or f:match("^/etc/") or f:match("^/bin/sh.lua") or f:match("^/bin/rc.lua") or f == "/init.lua" or f == "/base.lua" end},
         {id = "qos",      name = "QOS Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) for i, t in ipairs (qTools) do if f:match(t) then return true end end end},

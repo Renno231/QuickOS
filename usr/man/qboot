@@ -1,0 +1,31 @@
+NAME
+  qboot - build and control the QuickOS compressed boot archive
+
+SYNOPSIS
+  qboot build [options]
+  qboot enable [options]
+  qboot status [--json]
+  qboot restore [--json]
+  qboot disable [--json]
+
+DESCRIPTION
+  build creates an inactive QBoot image from the current QuickOS boot files.
+  enable activates an existing build, or builds one first when none exists.
+  restore and disable restore the preserved normal init.lua while retaining the build.
+  status reports whether QBoot is built and enabled.
+
+OPTIONS
+  --archive-layout=per-file|solid
+    Compress files independently (default) or as one stream.
+
+  --archive-storage=sidecar|embedded
+    Store compressed bytes in /.qboot/archive.lzss (default) or init.lua.
+
+  --no-boot-screen
+    Suppress the initial QuickOS boot logo drawing.
+
+  --diagnostics
+    Include decompression diagnostics. This slows boot and is not intended for normal use.
+
+  --json
+    Print command results as JSON.
