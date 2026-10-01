@@ -41,7 +41,7 @@ The following can override settings defined in .prop in the source filesystem.
     do not reboot after install
 
 .prop
-  .prop should have valid lua syntax for a table of keys and their values: e.g. "{label='OpenOS'}"
+  .prop should have valid lua syntax for a table of keys and their values: e.g. "{label='QuickOS'}"
   All fields are optional, as is the .prop file
 
   label:string
@@ -60,7 +60,7 @@ The following can override settings defined in .prop in the source filesystem.
     If true, the installer will skip the source filesystem and not include it for selection
 
   EXAMPLE:
-    {label='OpenOS', setlabel=true, setboot=true, reboot=true}
+    {label='QuickOS', setlabel=true, setboot=true, reboot=true}
 
 .install ENVIRONMENT
   A loot disc can optionally provide a custom installation script at the root of the source filesytem selected for installation. The script must be named ".install"
@@ -103,7 +103,7 @@ EXAMPLES
   install
     Searches all non rootfs filesystems to install from, and all non tmpfs filesystems to install to. Prompts the user for a selection, and copies. If .prop is defined in source, sets label and will prompt for reboot when completed.
 
-  install openos
-    Searches candidates source filesystems that have .prop's that define label="OpenOS" and prompts the user to confirm install to candidate target filesystems.
+  install quickos
+    Searches candidate source filesystems that have .prop files defining label="QuickOS" and prompts the user to confirm installation to candidate target filesystems.
 
 
