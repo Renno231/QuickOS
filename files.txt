@@ -30,6 +30,7 @@
 /bin/pastebin.lua
 /bin/ps.lua
 /bin/pwd.lua
+/bin/qboot.lua
 /bin/rc.lua
 /bin/reboot.lua
 /bin/redstone.lua
@@ -111,6 +112,7 @@
 /usr/lib/json.lua
 /usr/lib/liblz16.lua
 /usr/lib/lzss.lua
+/usr/lib/qboot.lua
 /usr/lib/realtime.lua
 /usr/lib/screens.lua
 /usr/lib/tnet.lua
@@ -140,6 +142,7 @@
 /usr/man/mv
 /usr/man/pastebin
 /usr/man/pwd
+/usr/man/qboot
 /usr/man/rc
 /usr/man/reboot
 /usr/man/redstone
