@@ -106,7 +106,7 @@ function api.expose(name, target, port, keys)
                 c:send("rpc", RPC_TYPE_PING, "pong")
             end
             --print("DEBUG RPC handler 10 - Message handling complete")
-        end)
+        end, nil, true)
     end, function(wake)
         -- maybe there should be some distinction between the endpoint access key and the device key
         return not endpoint.accessKey or wake == endpoint.accessKey
@@ -266,6 +266,16 @@ function api.connect(endpointName, port, address, wakeKey, timeout, fnKeys)
         timeout = timeout,
         connected = true  -- Track connection state
     }, RemoteProxy)
+
+    -- One persistent reply router per proxy; each call waits on its own callId slot
+    proxy.pending = {}
+    conn:expect("rpc", function(_, _, msgType, callId, response, errorMsg)
+        local call = proxy.pending[callId]
+        if (msgType ~= RPC_TYPE_RESPONSE and msgType ~= RPC_TYPE_DOC_RESPONSE) or not call then return end
+        proxy.pending[callId] = nil
+        call.response, call.error = response, errorMsg
+        call.received = true
+    end, nil, true)
     
     -- Optional: track in global client registry
     --print("DEBUG api.connect 9 - Registering client")
@@ -286,29 +296,22 @@ end
 
 function RemoteProxy:refreshDocumentation()
     local callId = computer.uptime() .. "-" .. math.random(1000, 9999)
-    local received = false
-    local doc, err
-    self.conn:expect(callId, function(_, result, error_msg)
-        received = true
-        if error_msg then
-            err = error_msg
-        else
-            doc = result
-        end
-    end, 5)
+    local call = {}
+    self.pending[callId] = call
     self.conn:send("rpc", RPC_TYPE_DOC_REQUEST, callId)
     local start = computer.uptime()
-    while computer.uptime() - start < 5 and not received do
+    while computer.uptime() - start < 5 and not call.received do
         os.sleep()
     end
-    if not received then
+    self.pending[callId] = nil
+    if not call.received then
         error("Timeout fetching documentation")
     end
-    if err then
-        error("Error fetching documentation: " .. err)
+    if call.error then
+        error("Error fetching documentation: " .. call.error)
     end
-    self.doc = doc
-    return doc
+    self.doc = call.response
+    return self.doc
 end
 
 -- Metamethod to allow remote.fn() syntax
@@ -351,33 +354,23 @@ function RemoteProxy:callRemoteFunction(fnName, callKey, ...)
     end
     
     local callId = computer.uptime() .. "-" .. math.random(1000, 9999)
-    local received = false
-    local result, err
-    
-    self.conn:expect("rpc", function(_, _, msgType, responseCallId, response, errorMsg)
-        if msgType == RPC_TYPE_RESPONSE and responseCallId == callId then
-            --print("DEBUG callRemoteFunction 8 - Matching response received")
-            received = true
-            result = errorMsg and {false, errorMsg} or response
-        -- else
-            --print("DEBUG callRemoteFunction 11 - Non-matching response, ignoring")
-        end
-    end, 10)
+    local call = {}
+    self.pending[callId] = call
     
     local args = table.pack(...)
     self.conn:send("rpc", RPC_TYPE_CALL, fnName, callId, args, callKey)
     
     local start = computer.uptime()
-    local loopCount = 0
-    while computer.uptime() - start < 10 and not received do
-        loopCount = loopCount + 1
+    while computer.uptime() - start < 10 and not call.received do
         os.sleep()
     end
+    self.pending[callId] = nil
     
-    if not received then
+    if not call.received then
         return false, ("Timeout calling remote function: " .. fnName)
     end
     
+    local result = call.error and {false, call.error} or call.response
     if type(result) == "table" then
         local max_index = 0
         for k in pairs(result) do
