@@ -35,6 +35,7 @@ function api.expose(name, target, port, keys)
         functionKeys = {},     -- fnName → required key
         functionDocs = {},     -- fnName → description
         connections = {},      -- address → connection object
+        connectCallbacks = {},
         listening = false     -- Track if endpoint is listening
     }, Endpoint)
     
@@ -107,6 +108,9 @@ function api.expose(name, target, port, keys)
             end
             --print("DEBUG RPC handler 10 - Message handling complete")
         end, nil, true)
+        for _, callback in ipairs(endpoint.connectCallbacks) do
+            pcall(callback, conn)
+        end
     end, function(wake)
         -- maybe there should be some distinction between the endpoint access key and the device key
         return not endpoint.accessKey or wake == endpoint.accessKey
@@ -126,6 +130,12 @@ end
 
 function Endpoint:setAccessKey(key)
     self.accessKey = key
+end
+
+function Endpoint:onConnect(callback)
+    assert(type(callback) == "function", "Connection callback must be a function")
+    self.connectCallbacks[#self.connectCallbacks + 1] = callback
+    return self
 end
 
 function Endpoint:setFunctionKeys(fnName, keys)
