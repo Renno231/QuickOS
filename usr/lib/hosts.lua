@@ -5,6 +5,16 @@ local serialization = require("serialization")
 local computer = require("computer")
 local HOSTS_FILE = "/etc/tnet.hosts"
 
+local function hostname()
+    if not fs.exists("/etc/hostname") then return nil end
+    local f = io.open("/etc/hostname", "r")
+    if not f then return nil end
+    local name = f:read("*a")
+    f:close()
+    name = type(name) == "string" and name:match("^%s*(.-)%s*$") or nil
+    return name ~= "" and name or nil
+end
+
 -- In-memory cache
 local cachedHosts = {}
 local selfHost, saveHosts = nil
@@ -116,6 +126,9 @@ function hosts.getAll()
 end
 
 function hosts.addHost(address, cid, name, wake, keys, overwrite)
+    if cid == getSelfAddress() and (name == nil or name == "") then
+        name = hostname()
+    end
     -- Check for duplicate name, address, or CID
     for _, h in ipairs(cachedHosts) do
         if h.name == name or h.address == address or h.cid == cid then
@@ -194,6 +207,9 @@ end
 -- Get the device's own host information
 function hosts.localhost()
     if selfHost then
+        if not selfHost._data.name or selfHost._data.name == "" then
+            selfHost._data.name = hostname()
+        end
         return selfHost
     end
     
@@ -204,6 +220,7 @@ function hosts.localhost()
     
     for _, h in ipairs(cachedHosts) do
         if h.cid == selfCID then
+            if not h.name or h.name == "" then h.name = hostname() end
             selfHost = setmetatable({_data = h}, Host)
             return selfHost
         end
