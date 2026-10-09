@@ -15,12 +15,13 @@ local pTypeRev, pTypes = {}, {
     ['m'] = "data"
 }
 
+local nextId = 0
 local function makeId()
     -- 4 chars from this computer
-    local base, n, id = computer.address():sub(-8,-5), 0
+    local base, id = computer.address():sub(-8,-5)
     repeat
-        id = base .. string.format("%04x", n % 0x10000)
-        n = n + 1
+        id = base .. string.format("%04x", nextId % 0x10000)
+        nextId = nextId + 1
     until not connections[id]
     return id
 end
@@ -86,6 +87,15 @@ local function startTimeoutChecker()
                     conn.default_callback = nil
                 end
             end
+
+            if conn._fragBuffer and conn._fragBuffer.lastFragTime then
+                if now - conn._fragBuffer.lastFragTime > 10 then
+                    if conn.on_error then
+                        pcall(conn.on_error, "Fragment buffer timeout (incomplete data)")
+                    end
+                    conn._fragBuffer = nil
+                end
+            end
         end
     end, math.huge)
 end
@@ -103,7 +113,7 @@ local function initRouter()
             return
         end
         
-        local sys_name, conn_id, msg_id, packet_type = table.unpack(ninfo_parts)
+        local sys_name, conn_id, msg_id, packet_type, frag, maxFrag = table.unpack(ninfo_parts)
         packet_type = pTypes[packet_type] or packet_type
         local args = pack(...)
         if packet_type == "connect" and listeners[localPort] then
@@ -155,7 +165,22 @@ local function initRouter()
                     decode = args[2]
                 }
             elseif packet_type == "data" then
-                conn:handleMessage(msg_id, msg, table.unpack(args,1,args.n))
+                if frag and maxFrag then
+                    frag, maxFrag = tonumber(frag), tonumber(maxFrag)
+                    local fBuffer = conn._fragBuffer or {fragCount = 0}
+                    conn._fragBuffer = fBuffer
+                    fBuffer.lastFragTime = computer.uptime()
+                    if not fBuffer[frag] then
+                        fBuffer[frag] = args[1]
+                        fBuffer.fragCount = fBuffer.fragCount + 1
+                    end
+                    if fBuffer.fragCount == maxFrag then
+                        conn:handleMessage(msg_id, msg, table.concat(fBuffer))
+                        conn._fragBuffer = nil
+                    end
+                else
+                    conn:handleMessage(msg_id, msg, table.unpack(args,1,args.n))
+                end
             end
         else
         end
@@ -286,9 +311,24 @@ function Connection:send(msg, ...)
         end
     end
     -- Send message
-    local ninfo = table.concat({self.sys, self.id, self.msg_id, pTypeRev["data"]}, ",")
-    local success, failed = pcall(self.modem.send, self.address, self.port, self.wake, ninfo, msg, table.unpack(args,1,args.n))
-    
+    local ninfo, single = table.concat({self.sys, self.id, self.msg_id, pTypeRev["data"]}, ","), true
+    local success, failed
+    if self.serial then --fragmentation only with serialization set
+        local dataMax = 8192 - (#self.wake + #ninfo + #msg + 20) -- extra 20 bits just in case
+        local dataSize = #args[1]+2
+        if dataMax < dataSize then
+            single = false
+            local totalFrags = math.ceil(dataSize / dataMax)
+            for cFrag = 1, totalFrags do
+                success, failed = pcall(self.modem.send, self.address, self.port, self.wake,
+                                        ninfo..","..tostring(cFrag)..","..tostring(totalFrags), msg, args[1]:sub((cFrag-1) * dataMax + 1, cFrag * dataMax))
+                if not success then break end
+            end
+        end
+    end
+    if single then
+        success, failed = pcall(self.modem.send, self.address, self.port, self.wake, ninfo, msg, table.unpack(args,1,args.n))
+    end
     if not success then
         if self.on_error then
             pcall(self.on_error, "Send failed" .. failed)
@@ -306,9 +346,9 @@ function Connection:init(timeout)
     pcall(self.modem.open, self.port)
     pcall(self.modem.send, self.address, self.port, self.wake, ninfo)
     
-    local loop_count = 0
+    -- local loop_count = 0
     while computer.uptime() - start_time < timeout do
-        loop_count = loop_count + 1
+        -- loop_count = loop_count + 1
         if self.connected then
             return true
         end

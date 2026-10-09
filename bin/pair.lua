@@ -61,8 +61,8 @@ end
 if #args == 0 or options.h or options.help then
     print([[
 Usage:
-  pair server <port> <hostname> --secret=<str> [--client-secret=<str>] [--client=<name>] [--keys=k1,v1,k2,v2] [--overwrite]
-  pair client <port> <hostname> --secret=<str> [--server-secret=<str>] [--server=<name>] [--keys=k1,v1,k2,v2] [--overwrite]
+  pair server <port> [hostname] --secret=<str> [--client-secret=<str>] [--client=<name>] [--keys=k1,v1,k2,v2] [--overwrite]
+  pair client <port> [hostname] --secret=<str> [--server-secret=<str>] [--server=<name>] [--keys=k1,v1,k2,v2] [--overwrite]
 Server mode: broadcasts hostname every 1s. Waits for client auth.
 Client mode: if --server and --secret given, auto-pairs. Otherwise, scans and lets user choose.
 ]])
@@ -81,8 +81,17 @@ local computerAddress = component.computer.address
 local mode = args[1]
 local port = tonumber(args[2])
 local myName = args[3]
+if not myName or myName == "" then
+    local f = require("io").open("/etc/hostname", "r")
+    if f then
+        myName = f:read("*a")
+        f:close()
+        myName = type(myName) == "string" and myName:match("^%s*(.-)%s*$") or nil
+        if myName == "" then myName = nil end
+    end
+end
 if not port or not myName then
-    io.stderr:write("Error: port and hostname required.\n")
+    io.stderr:write("Error: port and hostname (argument or /etc/hostname) required.\n")
     os.exit(1)
 end
 
@@ -99,6 +108,9 @@ modem.close(port) -- Will reopen when starting
 local running = true
 local onInterrupt = function() running = false return false end
 event.listen("interrupted", onInterrupt)
+local function cleanup()
+    event.ignore("interrupted", onInterrupt)
+end
 
 local localHost = hosts.localhost()
 local localHostKey = (localHost and localHost:getWakeKey()) or uuid.next():sub(-12)
@@ -113,6 +125,7 @@ if mode == "server" then
     local success, serverKeys = parseKeys(options.keys)
     if not success then
         io.stderr:write("Error parsing server keys: " .. serverKeys .. "\n")
+        cleanup()
         os.exit(1)
     end
     
@@ -138,7 +151,7 @@ if mode == "server" then
         if protocol == "PAIR_REQUEST" and arg1 and arg2 and arg3 then
             -- Handle authentication
             if arg1 ~= secret then
-                print("❌ Auth failed from " .. sender .. ": wrong secret.", arg1,"~=", secret)
+                print("❌ Auth failed from " .. sender .. ": wrong secret.")
                 modem.send(sender, port, "PAIR_REJECT", "wrong_secret")
                 return
             end
@@ -223,6 +236,7 @@ elseif mode == "client" then
     local success, clientKeys = parseKeys(options.keys)
     if not success then
         io.stderr:write("Error parsing client keys: " .. clientKeys .. "\n")
+        cleanup()
         os.exit(1)
     end
     
@@ -323,10 +337,12 @@ elseif mode == "client" then
         event.cancel(responseListener)
         if not paired then
             print("❌ Pairing timed out.")
+            cleanup()
             os.exit(1)
         end
         
         print("🎉 Pairing complete!")
+        cleanup()
         os.exit(0)
     end
     
@@ -356,8 +372,8 @@ elseif mode == "client" then
             if idx and foundServers[idx] then
                 local s = foundServers[idx]
                 io.write("Enter wake password for " .. s.name .. ": ")
-                secret = io.read()
-                if secret and #secret > 0 then
+                serverSecret = io.read()
+                if serverSecret and #serverSecret > 0 then
                     initiatePairing(s.addr, s.name)
                     break
                 else
@@ -371,13 +387,15 @@ elseif mode == "client" then
     
     -- Keep alive for discovery
     while running do os.sleep(1) end
+    event.cancel(broadcastListener)
 
 -----------------------------------------------------------------------
 -- INVALID MODE
 -----------------------------------------------------------------------
 else
     io.stderr:write("Error: mode must be 'server' or 'client'.\n")
+    cleanup()
     os.exit(1)
 end
 
-event.ignore("interrupt", onInterrupt)
+cleanup()
