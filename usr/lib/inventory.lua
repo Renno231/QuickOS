@@ -2,6 +2,7 @@
 -- Inventory Cache Library for OpenComputers Transposer (Optimized)
 -- Version: 1.3.0 - countItemByName now returns slot list.
 
+local identity = require "item_identity"
 local InventoryCache = {}
 InventoryCache.__index = InventoryCache
 
@@ -35,6 +36,7 @@ local function hasWildcard(name)
 end
 
 function InventoryCache:nextSlotContaining(itemName)
+    itemName = identity.canonical(itemName)
     local lookup = self._nameLookup[itemName]
     if lookup then
         return lookup[1]
@@ -42,6 +44,7 @@ function InventoryCache:nextSlotContaining(itemName)
 end
 
 function InventoryCache:slotsContaining(itemName)
+    itemName = identity.canonical(itemName)
     local lookup = self._nameLookup[itemName]
     return lookup and shallowCopy(lookup) or {}
 end
@@ -93,7 +96,7 @@ function InventoryCache:sync()
     else
       local stackCopy = shallowCopy(stack); stackCopy.slot = slot; self._inventory[slot] = stackCopy
       -- Key includes damage value if not 0
-      local nameKey = stackCopy.name .. (stack.damage ~= 0 and ":"..tostring(stack.damage) or "")
+      local nameKey = identity.stackName(stackCopy)
       if not self._nameLookup[nameKey] then self._nameLookup[nameKey] = {} end
       table.insert(self._nameLookup[nameKey], slot)
     end
@@ -122,6 +125,7 @@ end
 -- @param name (string) The item name (e.g., "minecraft:stone", "minecraft:planks:*").
 -- @return (table) A list of slot numbers, or an empty table if none found.
 function InventoryCache:findItemByName(name)
+    name = identity.canonical(name)
     local results = {}
     if type(name) ~= "string" or name == "minecraft:air" then return results end -- Return empty table on invalid/air input
 
