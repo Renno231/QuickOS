@@ -109,6 +109,7 @@
 /usr/lib/dataio.lua
 /usr/lib/hosts.lua
 /usr/lib/inventory.lua
+/usr/lib/item_identity.lua
 /usr/lib/json.lua
 /usr/lib/liblz16.lua
 /usr/lib/lzss.lua

@@ -9,37 +9,28 @@
 --
 --  Of course, for such a simple format, CSV is horribly complicated, so it
 --  likely gets something wrong.
-
 --  (c) Copyright 2013-2014 Incremental IP Limited.
 --  (c) Copyright 2014 Kevin Martin
 --  Available under the MIT licence.  See LICENSE for more information.
-
 local DEFAULT_BUFFER_BLOCK_SIZE = 1024 * 1024
 
-
 ------------------------------------------------------------------------------
-
 local function trim_space(s)
   return s:match("^%s*(.-)%s*$")
 end
-
 
 local function fix_quotes(s)
   -- the sub(..., -2) is to strip the trailing quote
   return string.sub(s:gsub('""', '"'), 1, -2)
 end
 
-
 ------------------------------------------------------------------------------
-
 local column_map = {}
 column_map.__index = column_map
-
 
 local function normalise_string(s)
   return (s:lower():gsub("[^%w%d]+", " "):gsub("^ *(.-) *$", "%1"))
 end
-
 
 --- Parse a list of columns.
 --  The main job here is normalising column names and dealing with columns
@@ -67,20 +58,16 @@ function column_map:new(columns)
         end
       end
     end
-
     if not names then
       names = { (n:lower():gsub("[^%w%d]+", " ")) }
     end
-
     t.name = n
     for _, n in ipairs(names) do
       name_map[n:lower()] = t
     end
   end
-
   return setmetatable({ name_map = name_map }, column_map)
 end
-
 
 --- Map "virtual" columns to file columns.
 --  Once we've read the header, work out which columns we're interested in and
@@ -88,7 +75,6 @@ end
 --  we need and writing a nice complaint if we haven't.
 function column_map:read_header(header)
   local index_map = {}
-
   -- Match the columns in the file to the columns in the name map
   local found = {}
   local found_any
@@ -101,9 +87,7 @@ function column_map:read_header(header)
       found_any = true
     end
   end
-
   if not found_any then return end
-
   -- check we found all the columns we need
   local not_found = {}
   for name, r in pairs(self.name_map) do
@@ -134,11 +118,9 @@ function column_map:read_header(header)
     end
     error(table.concat(problems, "\n"), 0)
   end
-
   self.index_map = index_map
   return true
 end
-
 
 function column_map:transform(value, index)
   local field = self.index_map[index]
@@ -154,12 +136,9 @@ function column_map:transform(value, index)
   end
 end
 
-
 ------------------------------------------------------------------------------
-
 local file_buffer = {}
 file_buffer.__index = file_buffer
-
 function file_buffer:new(file, buffer_block_size)
   return setmetatable({
       file              = file,
@@ -168,7 +147,6 @@ function file_buffer:new(file, buffer_block_size)
       buffer            = "",
     }, file_buffer)
 end
-
 
 --- Cut the front off the buffer if we've already read it
 function file_buffer:truncate(p)
@@ -180,7 +158,6 @@ function file_buffer:truncate(p)
     self.buffer_start = self.buffer_start + remove
   end
 end
-
 
 --- Find something in the buffer, extending it if necessary
 function file_buffer:find(pattern, init)
@@ -206,7 +183,6 @@ function file_buffer:find(pattern, init)
   end
 end
 
-
 --- Extend the buffer so we can see more
 function file_buffer:extend(offset)
   local extra = offset - #self.buffer - self.buffer_start
@@ -219,7 +195,6 @@ function file_buffer:extend(offset)
   end
 end
 
-
 --- Get a substring from the buffer, extending it if necessary
 function file_buffer:sub(a, b)
   self:extend(b)
@@ -227,19 +202,15 @@ function file_buffer:sub(a, b)
   return self.buffer:sub(a - self.buffer_start, b)
 end
 
-
 --- Close a file buffer
 function file_buffer:close()
   self.file:close()
   self.file = nil
 end
 
-
 ------------------------------------------------------------------------------
-
 local separator_candidates = { ",", "\t", "|" }
 local guess_separator_params = { record_limit = 8; }
-
 
 local function try_separator(buffer, sep, f)
   guess_separator_params.separator = sep
@@ -259,7 +230,6 @@ local function try_separator(buffer, sep, f)
   end
 end
 
-
 --- If the user hasn't specified a separator, try to work out what it is.
 function guess_separator(buffer, f)
   local best_separator, lowest_diff = "", math.huge
@@ -270,10 +240,8 @@ function guess_separator(buffer, f)
       lowest_diff = diff
     end
   end
-
   return best_separator
 end
-
 
 local unicode_BOMS =
 {
@@ -294,7 +262,6 @@ local unicode_BOMS =
   }
 }
 
-
 local function find_unicode_BOM(sub)
   for _, x in ipairs(unicode_BOMS) do
     local code = sub(1, x.length)
@@ -305,7 +272,6 @@ local function find_unicode_BOM(sub)
   return 0
 end
 
-
 --- Iterate through the records in a file
 --  Since records might be more than one line (if there's a newline in quotes)
 --  and line-endings might not be native, we read the file in chunks of
@@ -313,7 +279,6 @@ end
 --  using io.lines.
 local function separated_values_iterator(buffer, parameters)
   local field_start = 1
-
   local advance
   if buffer.truncate then
     advance = function(n)
@@ -326,12 +291,10 @@ local function separated_values_iterator(buffer, parameters)
     end
   end
 
-
   local function field_sub(a, b)
     b = b == -1 and b or b + field_start - 1
     return buffer:sub(a + field_start - 1, b)
   end
-
 
   local function field_find(pattern, init)
     init = init or 1
@@ -340,10 +303,8 @@ local function separated_values_iterator(buffer, parameters)
     return f - field_start + 1, l - field_start + 1, c
   end
 
-
   -- Is there some kind of Unicode BOM here?
   advance(find_unicode_BOM(field_sub))
-
 
   -- Start reading the file
   local sep = "(["..(parameters.separator or
@@ -355,6 +316,9 @@ local function separated_values_iterator(buffer, parameters)
   local field_start_line, field_start_column
   local record_count = 0
 
+  -- Add a counter for yielding
+  local yield_counter = 0
+  local yield_threshold = 10000  -- Adjust this value as needed
 
   local function problem(message)
     error(("%s:%d:%d: %s"):
@@ -362,13 +326,11 @@ local function separated_values_iterator(buffer, parameters)
              message), 0)
   end
 
-
   while true do
     local field_end, sep_end, this_sep
     local tidy
     field_start_line = line
     field_start_column = field_start - line_start + 1
-
     -- If the field is quoted, go find the other quote
     if field_sub(1, 1) == '"' then
       advance(1)
@@ -376,6 +338,12 @@ local function separated_values_iterator(buffer, parameters)
       repeat
         local a, b, c = field_find('"("?)', current_pos + 1)
         current_pos = b
+        -- Increment the counter and yield periodically
+        yield_counter = yield_counter + 1
+        if yield_counter >= yield_threshold then
+          coroutine.yield("__YIELD_CONTINUE__")
+          yield_counter = 0
+        end
       until c ~= '"'
       if not current_pos then problem("unmatched quote") end
       tidy = fix_quotes
@@ -385,10 +353,8 @@ local function separated_values_iterator(buffer, parameters)
       field_end, sep_end, this_sep = field_find(sep, 1)
       tidy = trim_space
     end
-
     -- Look for the separator or a newline or the end of the file
     field_end = (field_end or 0) - 1
-
     -- Read the field, then convert all the line endings to \n, and
     -- count any embedded line endings
     local value = field_sub(1, field_end)
@@ -396,12 +362,16 @@ local function separated_values_iterator(buffer, parameters)
     for nl in value:gmatch("\n()") do
       line = line + 1
       line_start = nl + field_start
+      -- Increment the counter and yield periodically
+      yield_counter = yield_counter + 1
+      if yield_counter >= yield_threshold then
+        coroutine.yield("__YIELD_CONTINUE__")
+        yield_counter = 0
+      end
     end
-
     value = tidy(value)
     if #value > 0 then nonblanks = true end
     field_count = field_count + 1
-
     -- Insert the value into the table for this "line"
     local key
     if parameters.column_map and header_read then
@@ -418,7 +388,6 @@ local function separated_values_iterator(buffer, parameters)
       fields[key] = value
       starts[key] = { line=field_start_line, column=field_start_column }
     end
-
     -- if we ended on a newline then yield the fields on this line.
     if not this_sep or this_sep == "\r" or this_sep == "\n" then
       if parameters.column_map and not header_read then
@@ -440,10 +409,8 @@ local function separated_values_iterator(buffer, parameters)
       end
       field_count, fields, starts, nonblanks = 0, {}, {}
     end
-
     -- If we *really* didn't find a separator then we're done.
     if not sep_end then break end
-
     -- If we ended on a newline then count it.
     if this_sep == "\r" or this_sep == "\n" then
       if this_sep == "\r" and field_sub(sep_end+1, sep_end+1) == "\n" then
@@ -452,20 +419,61 @@ local function separated_values_iterator(buffer, parameters)
       line = line + 1
       line_start = field_start + sep_end
     end
-
     advance(sep_end)
+    
+    -- Increment the counter and yield periodically
+    yield_counter = yield_counter + 1
+    if yield_counter >= yield_threshold then
+        coroutine.yield("__YIELD_CONTINUE__")
+      yield_counter = 0
+    end
   end
 end
 
-
 ------------------------------------------------------------------------------
-
 local buffer_mt =
 {
   lines = function(t)
-      return coroutine.wrap(function()
-          separated_values_iterator(t.buffer, t.parameters)
-        end)
+      -- Create a coroutine that will run the separated_values_iterator
+      local co = coroutine.create(function()
+          -- Run the iterator in a protected call to catch any errors
+          local ok, err = pcall(separated_values_iterator, t.buffer, t.parameters)
+          if not ok then
+              -- If there was an error, yield it as an error message
+              coroutine.yield(nil, err)
+          end
+          -- Yield a final nil to indicate we're done
+          coroutine.yield(nil)
+      end)
+      
+      local done = false
+      return function()
+          if done then
+              return nil
+          end
+          while true do
+            local ok, data, err = coroutine.resume(co)
+            if not ok then
+                -- The coroutine itself had an error
+                done = true
+                error(data)
+            elseif data == "__YIELD_CONTINUE__" then
+                -- This is just a yield to prevent hitting execution limits
+                -- Continue processing without returning to the caller
+                os.sleep(0.01)
+            elseif data == nil and err then
+                -- We got an error from the pcall inside the coroutine
+                done = true
+                error(err)
+            elseif data == nil then
+                -- Normal end of iteration
+                done = true
+                return nil
+            else
+                return data
+            end
+        end
+      end
     end,
   close = function(t)
       if t.buffer.close then t.buffer:close() end
@@ -475,7 +483,6 @@ local buffer_mt =
     end,
 }
 buffer_mt.__index = buffer_mt
-
 
 --- Use an existing file or buffer as a stream to read csv from.
 --  (A buffer is just something that looks like a string in that we can do
@@ -493,20 +500,16 @@ local function use(
   parameters.filename = parameters.filename or "<unknown>"
   parameters.column_map = parameters.columns and
     column_map:new(parameters.columns)
-
   if not buffer then
     buffer = file_buffer:new(io.stdin)
   elseif io.type(buffer) == "file" then
     buffer = file_buffer:new(buffer)
   end
-
   local f = { buffer = buffer, parameters = parameters }
   return setmetatable(f, buffer_mt)
 end
 
-
 ------------------------------------------------------------------------------
-
 --- Open a file for reading as a delimited file
 --  @return a file object
 local function open(
@@ -515,15 +518,12 @@ local function open(
                     -- See README.md
   local file, message = io.open(filename, "r")
   if not file then return nil, message end
-
   parameters = parameters or {}
   parameters.filename = filename
   return use(file_buffer:new(file), parameters)
 end
 
-
 ------------------------------------------------------------------------------
-
 local function makename(s)
   local t = {}
   t[#t+1] = "<(String) "
@@ -533,25 +533,19 @@ local function makename(s)
   return table.concat(t)
 end
 
-
 --- Open a string for reading as a delimited file
 --  @return a file object
 local function openstring(
   filecontents,     -- string: The contents of the delimited file
   parameters)       -- ?table: parameters controlling reading the file.
                     -- See README.md
-
   parameters = parameters or {}
-
 
   parameters.filename = parameters.filename or makename(filecontents)
   parameters.buffer_size = parameters.buffer_size or #filecontents
   return use(filecontents, parameters)
 end
 
-
 ------------------------------------------------------------------------------
-
 return { open = open, openstring = openstring, use = use }
-
 ------------------------------------------------------------------------------
