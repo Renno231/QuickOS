@@ -1,13 +1,14 @@
 local filesystem = require("filesystem")
-local lzss = require("lzss")
+local lz4 = require("lz4")
 
 local qboot = {}
 
 local HEADER = "-- QBOOT-GENERATED: 1"
 local SOURCE_INIT = "/.qboot/source-init.lua"
 local BUILD_INIT = "/.qboot/build-init.lua"
-local BUILD_ARCHIVE = "/.qboot/build-archive.lzss"
-local ACTIVE_ARCHIVE = "/.qboot/archive.lzss"
+-- Archives hold LZ4 blocks: one per file (per-file layout) or one for all (solid); not LZ4 frames.
+local BUILD_ARCHIVE = "/.qboot/build-archive.lz4blocks"
+local ACTIVE_ARCHIVE = "/.qboot/archive.lz4blocks"
 local LOADER_START = "local function loadfile(file)"
 local BOOT_CALL = "local status, err = pcall(loadfile(\"/lib/core/boot.lua\"), loadfile)"
 
@@ -46,7 +47,7 @@ local VIRTUAL_FILES = {
 
 local KNOWN_ABSENT_PATHS = {
   "bin/rc", "bin/source", "dev", "etc/hostname", "home/.pwd",
-  "home/main.lua", "lib/lzss.lua", "tmp",
+  "home/main.lua", "lib/lz4.lua", "tmp",
 }
 
 local function readFile(path)
@@ -161,7 +162,7 @@ local function readEntries(files, kind)
     else
       result[#result + 1] = {
         kind = kind, name = definition.name, path = definition.path,
-        source = source, compressed = lzss.compress(source),
+        source = source, compressed = lz4.compress(source),
       }
     end
   end
@@ -263,50 +264,16 @@ end
 
 local LOCALIZATION = [==[
 local string, assert, table, math, tostring = string, assert, table, math, tostring
-local stringByte, stringSub, stringUnpack, stringRep = string.byte, string.sub, string.unpack, string.rep
+local stringSub = string.sub
 local tableConcat = table.concat
-local mathMax, mathCeil = math.max, math.ceil
 ]==]
 
-local DECOMPRESSOR = [==[
-local function qbootDecompress(input)
-  local offset, output, outputCount, window = 1, {}, 0, ""
-  local inputLength = #input
-  while offset <= inputLength do
-    local flags = stringByte(input, offset)
-    offset = offset + 1
-    local flagBit = 1
-    for _ = 1, 8 do
-      if offset > inputLength then break end
-      local value
-      if (flags & flagBit) ~= 0 then
-        value = stringSub(input, offset, offset)
-        offset = offset + 1
-      else
-        local token = stringUnpack(">I2", input, offset)
-        offset = offset + 2
-        local position = (token >> 4) + 1
-        local length = (token & 15) + 3
-        local windowStart = mathMax(1, #window - 4096 + 1)
-        local realPosition = windowStart + position - 1
-        local available = stringSub(window, realPosition)
-        assert(#available > 0, "invalid QBoot LZSS reference at input " .. tostring(offset) .. ", position " .. tostring(position) .. ", window " .. tostring(#window) .. ", bytes " .. tostring(#input))
-        if #available >= length then
-          value = stringSub(available, 1, length)
-        else
-          value = stringSub(stringRep(available, mathCeil(length / #available)), 1, length)
-        end
-      end
-      outputCount = outputCount + 1
-      output[outputCount] = value
-      window = window .. value
-      if #window > 8192 then window = stringSub(window, -4096) end
-      flagBit = flagBit << 1
-    end
-  end
-  return tableConcat(output)
+-- The boot decoder is lz4.lua itself, embedded in the generated init.lua.
+local function decompressor()
+  local path = assert(package.searchpath("lz4", package.path))
+  local source = assert(readFile(path))
+  return "local qbootDecompress = (function()\n" .. source .. "\nend)().decompress\n"
 end
-]==]
 
 local RUNTIME_AFTER_ARCHIVE = [==[
 local function qbootNormalize(path)
@@ -519,7 +486,7 @@ local function renderGenerated(sourceInit, options, values)
     if options.archiveStorage == "sidecar" then
       archiveDeclaration = [==[
 local function qbootReadSidecar()
-  local handle, reason = invoke(addr, "open", "/.qboot/archive.lzss")
+  local handle, reason = invoke(addr, "open", "/.qboot/archive.lz4blocks")
   assert(handle, reason)
   local chunks = {}
   while true do
@@ -546,12 +513,12 @@ qbootReadSidecar = nil
     archiveExpansion = ""
   else
     local source, indexes = makeSourceIndexes(groups, values)
-    local compressed = lzss.compress(source)
+    local compressed = lz4.compress(source)
     archive = options.archiveStorage == "sidecar" and compressed or nil
     if options.archiveStorage == "sidecar" then
       archiveDeclaration = [==[
 local function qbootReadSidecar()
-  local handle, reason = invoke(addr, "open", "/.qboot/archive.lzss")
+  local handle, reason = invoke(addr, "open", "/.qboot/archive.lz4blocks")
   assert(handle, reason)
   local chunks = {}
   while true do
@@ -589,7 +556,7 @@ qbootReadSidecar = nil
     .. "local qbootDirectories = {\n" .. renderBooleanMap(directories) .. "}\n"
     .. "local qbootKnownAbsent = {\n" .. renderBooleanMap(absent) .. "}\n"
     .. "local qbootLoading = {}\n"
-    .. DECOMPRESSOR
+    .. decompressor()
     .. archiveExpansion
     .. (options.archiveLayout == "solid" and SOLID_UNPACK or (options.diagnostics and DIAGNOSTIC_PREFIX or NORMAL_UNPACK))
     .. RUNTIME_AFTER_ARCHIVE:gsub("__QBOOT_SUPPRESS_SCREEN__", tostring(options.noBootScreen))

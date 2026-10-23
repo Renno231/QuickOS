@@ -111,8 +111,8 @@
 /usr/lib/inventory.lua
 /usr/lib/item_identity.lua
 /usr/lib/json.lua
-/usr/lib/liblz16.lua
-/usr/lib/lzss.lua
+/usr/lib/lz4.lua
+/usr/lib/lz4_frame.lua
 /usr/lib/qboot.lua
 /usr/lib/realtime.lua
 /usr/lib/screens.lua
