@@ -19,7 +19,7 @@ OPTIONS
     Compress files independently (default) or as one stream.
 
   --archive-storage=sidecar|embedded
-    Store compressed bytes in /.qboot/archive.lzss (default) or init.lua.
+    Store compressed bytes in /.qboot/archive.lz4blocks (default) or init.lua.
 
   --no-boot-screen
     Suppress the initial QuickOS boot logo drawing.
