@@ -8,6 +8,7 @@
 /bin/components.lua
 /bin/cp.lua
 /bin/date.lua
+/bin/disco.lua
 /bin/dmesg.lua
 /bin/echo.lua
 /bin/edit.lua
@@ -48,6 +49,7 @@
 /etc/profile.lua
 /etc/rc.cfg
 /etc/rc.d/files.txt
+/etc/rc.d/disco.lua
 /init.lua
 /lib/bit32.lua
 /lib/buffer.lua
@@ -107,12 +109,14 @@
 /usr/lib/api.lua
 /usr/lib/cbor.lua
 /usr/lib/dataio.lua
+/usr/lib/disco.lua
 /usr/lib/hosts.lua
 /usr/lib/inventory.lua
 /usr/lib/item_identity.lua
 /usr/lib/json.lua
 /usr/lib/lz4.lua
 /usr/lib/lz4_frame.lua
+/usr/lib/pair.lua
 /usr/lib/qboot.lua
 /usr/lib/realtime.lua
 /usr/lib/screens.lua
@@ -127,6 +131,7 @@
 /usr/man/clear
 /usr/man/cp
 /usr/man/date
+/usr/man/disco
 /usr/man/dmesg
 /usr/man/echo
 /usr/man/edit

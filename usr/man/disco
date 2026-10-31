@@ -1,0 +1,28 @@
+NAME
+  disco - Find computers and services on the network
+
+SYNOPIS
+  disco start [name] [--services=svc=value,...] [--ttl=seconds]
+  disco stop
+  disco offer <service> [value]
+  disco withdraw <service>
+  disco status
+  disco find [service] [--timeout=seconds]
+  disco resolve <name> [--timeout=seconds]
+  disco list
+
+DESCRIPTION
+  Computers that run "disco start" answer queries for their name and the services they offer.
+  Name defaults to /etc/hostname. Answers are cached until their ttl (default 120s) runs out.
+  disco only tells you who is reachable right now; use pair to trust a host and share secrets.
+  Uses port 5353 on every modem. To announce at boot, enable the disco rc service.
+
+EXAMPLES
+  disco start hub --services=craftServer=5990
+    Announce this computer as "hub" offering craftServer on port 5990
+
+  disco find craftServer
+    List every computer offering craftServer
+
+  disco resolve hub
+    Print the modem address of "hub"
