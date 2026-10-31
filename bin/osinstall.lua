@@ -284,7 +284,7 @@ end
 
 local function createBuckets(allFiles)
     local bucketDefinitions = {
-        {id = "required", name = "Required",     isRequired = true,  defaultSelected = true,  matcher = function(f) return f:match("^/lib/") or f:match("^/etc/") or f:match("^/bin/sh.lua") or f:match("^/bin/rc.lua") or f == "/init.lua" or f == "/base.lua" end},
+        {id = "required", name = "Required",     isRequired = true,  defaultSelected = true,  matcher = function(f) return f:match("^/lib/") or f:match("^/etc/") or f:match("^/bin/sh.lua") or f:match("^/bin/rc.lua") or f == "/bin/hostname.lua" or f == "/init.lua" or f == "/base.lua" end},
         {id = "qos",      name = "QOS Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("^/usr/lib/") end},
         {id = "sys",      name = "Sys Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("cfgemu.lua") or f:match("flash.lua") or f:match("lshw.lua") or f:match("mount.lua") or f:match("pastebin.lua") or f:match("wget.lua") end},
         {id = "basic",    name = "Basic Tools",  isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("^/bin/") end},
@@ -518,11 +518,17 @@ local function listAll(src)
 
     if src == nil or type(src) ~= "string" then src = "/" end
 
+    -- Also this computer's own settings: its name, pairing secrets, enabled daemons and mount
+    -- options. installOS writes a fresh rc.cfg.
     local exclusions = {
         ["/home/"] = true,
         ["/tmp/"] = true,
         ["/dev/"] = true,
-        ["/mnt/"] = true
+        ["/mnt/"] = true,
+        ["/etc/hostname"] = true,
+        ["/etc/tnet.hosts"] = true,
+        ["/etc/rc.cfg"] = true,
+        ["/etc/filesystem.cfg"] = true
     }
 
     for path in fs.list(src) do
@@ -580,6 +586,12 @@ local function installOS(drive, files)
             return false
         end
         done = done + 1
+    end
+
+    if not fs.exists(drive.path .. "/etc/rc.cfg") then
+        fs.makeDirectory(drive.path .. "/etc")
+        local f = io.open(drive.path .. "/etc/rc.cfg", "w")
+        if f then f:write("enabled = {}\n") f:close() end
     end
 
     computer.beep()
