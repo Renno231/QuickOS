@@ -140,8 +140,7 @@ local function processFile(srcPath, destPath, isDownload, replaceExisting)
             })
             if result then
                 for chunk in response do
-                    string.gsub(chunk, "\r\n", "\n")
-                    f:write(chunk)
+                    f:write((chunk:gsub("\r\n", "\n")))
                 end
                 f:close()
                 return true
@@ -284,10 +283,9 @@ local function createDriveSelectionMenu(drives)
 end
 
 local function createBuckets(allFiles)
-    local qTools = {"tnet.lua","api.lua","dataio.lua","realtime.lua","screens.lua","qmenu.lua","cbor.lua","hosts.lua","json.lua","lz4.lua","lz4_frame.lua","inventory.lua","item_identity.lua","qboot.lua"}
     local bucketDefinitions = {
         {id = "required", name = "Required",     isRequired = true,  defaultSelected = true,  matcher = function(f) return f:match("^/lib/") or f:match("^/etc/") or f:match("^/bin/sh.lua") or f:match("^/bin/rc.lua") or f == "/init.lua" or f == "/base.lua" end},
-        {id = "qos",      name = "QOS Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) for i, t in ipairs (qTools) do if f:match(t) then return true end end end},
+        {id = "qos",      name = "QOS Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("^/usr/lib/") end},
         {id = "sys",      name = "Sys Tools",    isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("cfgemu.lua") or f:match("flash.lua") or f:match("lshw.lua") or f:match("mount.lua") or f:match("pastebin.lua") or f:match("wget.lua") end},
         {id = "basic",    name = "Basic Tools",  isRequired = false, defaultSelected = true,  matcher = function(f) return f:match("^/bin/") end},
         {id = "man",      name = "Man Pages",    isRequired = false, defaultSelected = false, matcher = function(f) return f:match("^/usr/man/") end},
@@ -493,9 +491,9 @@ local function listAll(src)
         local fullList = ""
         if result then
             for chunk in response do
-                string.gsub(chunk, "\r\n", "\n")
                 fullList = fullList .. chunk
             end
+            fullList = fullList:gsub("\r\n", "\n")
         else
             return nil, "Failed to fetch the file list!"
         end
