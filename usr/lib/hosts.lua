@@ -106,6 +106,8 @@ function Host:getWakeKey() return self._data.wake end
 function Host:getKeys() return self._data.keys or {} end
 function Host:get(key) return self._data.keys and self._data.keys[key] end
 function Host:getCID() return self._data.cid end
+-- The address of this computer's card that reaches the host, if pairing recorded it.
+function Host:getVia() return self._data.via end
 
 -- Main API
 function hosts.getHost(addressOrName)
@@ -125,7 +127,7 @@ function hosts.getAll()
     return result
 end
 
-function hosts.addHost(address, cid, name, wake, keys, overwrite)
+function hosts.addHost(address, cid, name, wake, keys, overwrite, via)
     if cid == getSelfAddress() and (name == nil or name == "") then
         name = hostname()
     end
@@ -174,6 +176,7 @@ function hosts.addHost(address, cid, name, wake, keys, overwrite)
         name = name,
         wake = wake,
         keys = finalKeys,
+        via = via,
         paired_at = computer.uptime()
     }
     table.insert(cachedHosts, newHost)

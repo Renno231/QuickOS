@@ -82,7 +82,7 @@ function pair.serve(port, opts)
     end
 
     local paired, pairedAt, gotKeys, failure
-    local function onMessage(_, via, sender, recvPort, _, protocol, arg1, arg2, arg3)
+    local function onMessage(_, via, sender, recvPort, _, protocol, arg1, arg2, arg3, arg4)
         if recvPort ~= port then return end
         local modem = component.proxy(via)
         if protocol == "PAIR_REQUEST" and arg1 and arg2 and arg3 and not paired then
@@ -101,12 +101,14 @@ function pair.serve(port, opts)
                 modem.send(sender, port, "SERVER_KEYS", serialization.serialize(me.keys))
                 log("📤 Sent " .. count(me.keys) .. " keys to client.")
             end
-            local saved, reason = hosts.addHost(sender, arg3, arg2, opts.clientSecret, nil, opts.overwrite)
+            -- The client's own wake key, unless the operator gave one for it.
+            local saved, reason = hosts.addHost(sender, arg3, arg2, opts.clientSecret or arg4, nil, opts.overwrite, via)
             if saved then log("💾 Saved client host: " .. arg2) else
                 log("⚠️  Failed to save client: " .. tostring(reason))
                 failure = reason
             end
             modem.send(sender, port, "PAIR_SUCCESS", me.name, computer.address(), me.secret, opts.clientSecret)
+            modem.setWakeMessage(me.secret, true)  -- the client may now wake us through this card
             log("✅ Pairing completed with " .. arg2)
             paired, pairedAt = arg2, computer.uptime()
         elseif protocol == "CLIENT_KEYS" and arg1 and paired then
@@ -116,7 +118,7 @@ function pair.serve(port, opts)
                 log("📥 Received " .. count(clientKeys) .. " keys from client.")
                 local merged = host:getKeys()
                 for k, v in pairs(clientKeys) do merged[k] = v end
-                hosts.addHost(sender, host:getCID(), host:getName(), host:getWakeKey(), merged, true)
+                hosts.addHost(sender, host:getCID(), host:getName(), host:getWakeKey(), merged, true, host:getVia())
                 log("💾 Updated client keys.")
             else
                 log("⚠️ Received invalid keys from client.")
@@ -172,11 +174,12 @@ function pair.with(server, port, opts)
                 return
             end
             local saved, reason = hosts.addHost(server.address, serverCID, server.name or data,
-                serverSecret, serverKeys, opts.overwrite)
+                serverSecret, serverKeys, opts.overwrite, modem.address)
             if saved then log("💾 Saved server host: " .. (server.name or data)) else
                 failure = reason
                 log("⚠️  Failed to save server: " .. tostring(reason))
             end
+            modem.setWakeMessage(me.secret, true)  -- the server may now wake us through this card
             if next(me.keys) then
                 log("📤 Sending " .. count(me.keys) .. " keys to server.")
                 modem.send(server.address, port, "CLIENT_KEYS", serialization.serialize(me.keys))
