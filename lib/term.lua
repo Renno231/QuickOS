@@ -97,10 +97,12 @@ local function create_cursor(history, ops)
       end
     end
     function cursor:echo(arg, ...)
-      -- The newline is checked first, so a password field doesn't mask Enter into one more pwchar.
-      if nobreak and arg == "\n" then
-        arg = ""
-      elseif pwchar and type(arg) == "string" and #arg > 0 and not arg:match("^\27") then -- "" is used for scrolling
+      -- Drop the line break before masking, so it isn't shown as one more pwchar, and so Ctrl+C's
+      -- "^C\n" stays on the line instead of scrolling it away.
+      if nobreak and type(arg) == "string" and arg:sub(-1) == "\n" then
+        arg = arg:sub(1, -2)
+      end
+      if pwchar and type(arg) == "string" and #arg > 0 and not arg:match("^\27") then -- "" is used for scrolling
         arg = pwchar(arg)
       end
       return self.super.echo(self, arg, ...)
