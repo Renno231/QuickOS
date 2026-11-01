@@ -107,7 +107,6 @@
 /lib/tty.lua
 /lib/uuid.lua
 /lib/vt100.lua
-/qmenu.lua
 /usr/bin/bundle.lua
 /usr/bin/mkinstaller.lua
 /usr/bin/screens.lua
