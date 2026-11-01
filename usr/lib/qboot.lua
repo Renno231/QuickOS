@@ -36,19 +36,14 @@ local MODULE_FILES = {
   {name = "core/cursor", path = "/lib/core/cursor.lua"},
 }
 
+-- Files read through the filesystem before base.lua returns. Anything else, and everything once
+-- base.lua returns, comes from the real disk, so settings like /etc/rc.cfg are never stale.
 local VIRTUAL_FILES = {
   {name = "bin/rc.lua", path = "/bin/rc.lua"},
-  {name = "bin/sh.lua", path = "/bin/sh.lua"},
-  {name = "bin/source.lua", path = "/bin/source.lua"},
-  {name = "etc/profile.lua", path = "/etc/profile.lua"},
-  {name = "etc/rc.cfg", path = "/etc/rc.cfg"},
-  {name = "home/.shrc", path = "/home/.shrc", optional = true},
 }
 
-local KNOWN_ABSENT_PATHS = {
-  "bin/rc", "bin/source", "dev", "etc/hostname", "home/.pwd",
-  "home/main.lua", "lib/lz4.lua", "tmp",
-}
+-- OS paths the boot looks for that QuickOS doesn't have. Never list user or machine files here.
+local KNOWN_ABSENT_PATHS = {"bin/rc", "dev", "lib/lz4.lua", "tmp"}
 
 local function readFile(path)
   local file, reason = io.open(path, "rb")
@@ -151,20 +146,12 @@ local function readEntries(files, kind)
   for _, definition in ipairs(files) do
     local source, reason = readFile(definition.path)
     if not source then
-      if definition.optional then
-        result[#result + 1] = {
-          kind = kind, name = definition.name, path = definition.path,
-          absent = true, source = "", compressed = "",
-        }
-      else
-        return nil, "missing " .. kind .. " boot file " .. definition.path .. ": " .. tostring(reason)
-      end
-    else
-      result[#result + 1] = {
-        kind = kind, name = definition.name, path = definition.path,
-        source = source, compressed = lz4.compress(source),
-      }
+      return nil, "missing " .. kind .. " boot file " .. definition.path .. ": " .. tostring(reason)
     end
+    result[#result + 1] = {
+      kind = kind, name = definition.name, path = definition.path,
+      source = source, compressed = lz4.compress(source),
+    }
   end
   return result
 end
@@ -180,13 +167,11 @@ end
 local function collectDirectories(entries)
   local directories = { [""] = true }
   for _, entry in ipairs(entries) do
-    if not entry.absent then
-      local path = normalizePath(entry.path)
-      local current = ""
-      for part in path:gmatch("([^/]+)/") do
-        current = current == "" and part or current .. "/" .. part
-        directories[current] = true
-      end
+    local path = normalizePath(entry.path)
+    local current = ""
+    for part in path:gmatch("([^/]+)/") do
+      current = current == "" and part or current .. "/" .. part
+      directories[current] = true
     end
   end
   return directories
@@ -221,12 +206,10 @@ local function makeIndexes(groups, values)
   local parts = {}
   for _, kind in ipairs(groups) do
     for _, entry in ipairs(values[kind]) do
-      if not entry.absent then
-        local data = entry.compressed
-        indexes[kind][entry.name] = {offset, #data}
-        parts[#parts + 1] = data
-        offset = offset + #data
-      end
+      local data = entry.compressed
+      indexes[kind][entry.name] = {offset, #data}
+      parts[#parts + 1] = data
+      offset = offset + #data
     end
   end
   return table.concat(parts), indexes
@@ -238,11 +221,9 @@ local function makeSourceIndexes(groups, values)
   local parts = {}
   for _, kind in ipairs(groups) do
     for _, entry in ipairs(values[kind]) do
-      if not entry.absent then
-        indexes[kind][entry.name] = {offset, #entry.source}
-        parts[#parts + 1] = entry.source
-        offset = offset + #entry.source
-      end
+      indexes[kind][entry.name] = {offset, #entry.source}
+      parts[#parts + 1] = entry.source
+      offset = offset + #entry.source
     end
   end
   return table.concat(parts), indexes
@@ -303,51 +284,39 @@ local function qbootVirtualInvoke(address, method, ...)
   end
   if address ~= addr then return qbootOriginalComponentInvoke(address, method, ...) end
   local first, second = ...
-  if method == "exists" then
-    local path = qbootNormalize(first)
-    if qbootFileMetadata[path] or qbootDirectories[path] then return true end
-    if qbootKnownAbsent[path] or path:match("^mnt/[^/]+$") then return false end
-    return false
-  elseif method == "isDirectory" then
+  if method == "exists" or method == "isDirectory" then
     local path = qbootNormalize(first)
     if qbootDirectories[path] then return true end
-    if qbootFileMetadata[path] or qbootKnownAbsent[path] or path:match("^mnt/[^/]+$") then return false end
-    return false
+    if qbootFileMetadata[path] then return method == "exists" end
+    if qbootKnownAbsent[path] or path:match("^mnt/[^/]+$") then return false end
   elseif method == "open" then
     local path = qbootNormalize(first)
     local mode = tostring(second or "r")
     local compressed = qbootVirtualFiles[path]
-    if type(compressed) ~= "string" or (mode ~= "r" and mode ~= "rb") then
-      return nil, "QBoot boot file unavailable: /" .. path
+    if type(compressed) == "string" and (mode == "r" or mode == "rb") then
+      qbootNextHandle = qbootNextHandle + 1
+      local handle = "qboot:" .. tostring(qbootNextHandle)
+      qbootHandles[handle] = {data = qbootUnpack("virtual", path, compressed), offset = 1}
+      return handle
     end
-    qbootNextHandle = qbootNextHandle + 1
-    local handle = "qboot:" .. tostring(qbootNextHandle)
-    qbootHandles[handle] = {data = qbootUnpack("virtual", path, compressed), offset = 1, path = path}
-    return handle
-  elseif method == "read" then
+  elseif qbootHandles[first] then
     local state = qbootHandles[first]
-    if not state then return nil, "invalid QBoot handle" end
-    if state.offset > #state.data then return nil end
-    local requested = tonumber(second) or #state.data
-    local remaining = #state.data - state.offset + 1
-    local count = math.min(requested, remaining)
-    local value = stringSub(state.data, state.offset, state.offset + count - 1)
-    state.offset = state.offset + #value
-    return value
-  elseif method == "close" then
-    local state = qbootHandles[first]
-    if not state then return nil, "invalid QBoot handle" end
-    qbootHandles[first] = nil
-    if state.path == "bin/source.lua" then qbootFinishBoot() end
-    return true
-  elseif method == "getLabel" then
-    return "qboot"
-  elseif method == "spaceTotal" or method == "spaceUsed" then
-    return 0
-  elseif method == "isReadOnly" then
-    return true
+    if method == "read" then
+      if state.offset > #state.data then return nil end
+      local requested = tonumber(second) or #state.data
+      local remaining = #state.data - state.offset + 1
+      local count = math.min(requested, remaining)
+      local value = stringSub(state.data, state.offset, state.offset + count - 1)
+      state.offset = state.offset + #value
+      return value
+    elseif method == "close" then
+      qbootHandles[first] = nil
+      return true
+    end
+    return nil, "QBoot boot file method unavailable: " .. tostring(method)
   end
-  return nil, "QBoot boot filesystem method unavailable: " .. tostring(method)
+  -- Everything not in the archive is on the real disk.
+  return qbootOriginalComponentInvoke(address, method, ...)
 end
 
 qbootComponent.invoke = qbootVirtualInvoke
@@ -359,9 +328,7 @@ qbootFinishBoot = function()
     qbootVirtualFiles = nil
     qbootHandles = nil
   end
-  _G.__qboot_finishBoot = nil
 end
-_G.__qboot_finishBoot = qbootFinishBoot
 ]==]
 
 local LOADER = [==[
@@ -374,12 +341,29 @@ local function loadfile(file)
 
   local compressed = qbootRaw[file]
   if type(compressed) ~= "string" then
-    return nil, "QBoot raw boot file unavailable: " .. tostring(file)
+    -- Not in the archive, like /home/main.lua or /bin/lua.lua: read it from the disk.
+    local handle, reason = invoke(addr, "open", file)
+    if not handle then return nil, reason end
+    local buffer = {}
+    repeat
+      local data = invoke(addr, "read", handle, math.maxinteger or math.huge)
+      buffer[#buffer + 1] = data
+    until not data
+    invoke(addr, "close", handle)
+    return load(tableConcat(buffer), "=" .. file, "bt", _G)
   end
   local source = qbootUnpack("raw", file, compressed)
   local program, reason = load(source, "=" .. file, "bt", _G)
   if not program then return nil, reason end
   qbootRaw[file] = nil
+  if file == "base.lua" then
+    -- base.lua ends after rc has run; from then on the real disk is used.
+    return function(...)
+      local result = table.pack(program(...))
+      qbootFinishBoot()
+      return table.unpack(result, 1, result.n)
+    end
+  end
   return program
 end
 
@@ -451,9 +435,7 @@ end
 local function renderEmbeddedMap(entries)
   local output = {}
   for _, entry in ipairs(entries) do
-    if not entry.absent then
-      output[#output + 1] = "  [" .. quoted(entry.name) .. "] = " .. luaLiteral(entry.compressed) .. ",\n"
-    end
+    output[#output + 1] = "  [" .. quoted(entry.name) .. "] = " .. luaLiteral(entry.compressed) .. ",\n"
   end
   return table.concat(output)
 end
@@ -472,10 +454,7 @@ local function renderGenerated(sourceInit, options, values)
   appendAll(allEntries, values.virtual)
 
   local fileMetadata, absent = {}, {}
-  for _, entry in ipairs(allEntries) do
-    local path = normalizePath(entry.path)
-    if entry.absent then absent[path] = true else fileMetadata[path] = true end
-  end
+  for _, entry in ipairs(allEntries) do fileMetadata[normalizePath(entry.path)] = true end
   for _, path in ipairs(KNOWN_ABSENT_PATHS) do absent[path] = true end
   local directories = collectDirectories(allEntries)
 
