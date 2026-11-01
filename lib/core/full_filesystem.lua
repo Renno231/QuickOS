@@ -322,9 +322,8 @@ function filesystem.isAutorunEnabled()
       pcall(config)
       isAutorunEnabled = not not env.autorun
     else
-      isAutorunEnabled = true
+      isAutorunEnabled = false
     end
-    saveConfig()
   end
   return isAutorunEnabled
 end
