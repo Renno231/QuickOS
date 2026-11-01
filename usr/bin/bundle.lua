@@ -54,27 +54,35 @@ local function pack(root,compress,skip)
   fs.makeDirectory(fs.path(file))
   local out,err=(compress and frame or io).open(file,"wb");if not out then error(file..": "..tostring(err),0) end
   local count=0
-  local function add(rel)
+  -- rel is the file's path under root; as is the path it is stored under.
+  local function add(rel,as)
     local full=fs.concat(root,rel)
     if full==file or full==skip or exclude[full] then return end
     if fs.isDirectory(full) then
-      local names={};for name in fs.list(full) do names[#names+1]=name end;table.sort(names)
-      for _,name in ipairs(names) do add(rel=="" and (name:gsub("/$","")) or fs.concat(rel,name)) end
+      local names={};for name in fs.list(full) do names[#names+1]=(name:gsub("/$","")) end;table.sort(names)
+      for _,name in ipairs(names) do add(rel=="" and name or fs.concat(rel,name),as=="" and name or fs.concat(as,name)) end
       return
     end
     local f=assert(io.open(full,"rb"))
-    out:write(string.pack(">s2I4",rel,fs.size(full)))
+    out:write(string.pack(">s2I4",as,fs.size(full)))
     for chunk in function() return f:read(8192) end do out:write(chunk) end
-    f:close();print(rel);count=count+1
+    f:close();print(as);count=count+1
     os.sleep(0)
   end
   local done,err=pcall(function()
     out:write("OCB1")
-    for _,path in ipairs(paths) do
+    -- An entry is a path, or {path,place} to store it under another path.
+    for _,entry in ipairs(paths) do
+      local path,place=entry,nil
+      if type(entry)=="table" then path,place=entry[1],entry[2] end
       local full=fs.canonical(path:sub(1,1)=="/" and path or fs.concat(root,path))
       if not (root=="/" or full==root or full:sub(1,#root+1)==root.."/") then error(path.." is not inside "..root,0) end
       if not fs.exists(full) then error("no such file: "..full,0) end
-      add(full==root and "" or full:sub(root=="/" and 2 or #root+2))
+      local rel=full==root and "" or full:sub(root=="/" and 2 or #root+2)
+      if place and (place=="" or place:sub(1,1)=="/" or ("/"..place.."/"):find("/%.%./")) then
+        error("bad place for "..path..": "..place,0)
+      end
+      add(rel,place or rel)
     end
     out:write(string.pack(">s2",""))
   end)
