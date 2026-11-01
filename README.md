@@ -10,6 +10,8 @@ pastebin run id5ZWJp8
 
 Then follow the QuickOS installation wizard.
 
+To set up many computers, make an installer floppy on a QuickOS computer with `mkinstaller` (see `man mkinstaller`). A computer with an empty hard drive boots it from the BIOS and installs QuickOS and your own packages, hands-off and without a screen if needed. `bundle` packs a project for it, or to carry to another computer.
+
 ## Features
 1) A custom installer located at `/bin/osinstall.lua` with a snappy UI and very modular configuration options
 2) A powerful custom toolkit of software made by Renno231 in the `/usr/bin` and `/usr/lib` directories
@@ -23,4 +25,3 @@ Then follow the QuickOS installation wizard.
 - An operating system configuration system for greater programmatic control of the OS and its features
 - A configurable automatic update system
 - A faster installation process
-- Headless installation
