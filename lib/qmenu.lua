@@ -3,6 +3,7 @@ local component = require("component")
 local keys = require("keyboard").keys
 local unicode = require("unicode")
 local tty = require("tty")
+local term = require("term")
 local io = require("io")
 
 local qmenu = {}
@@ -349,7 +350,11 @@ function Menu:handleEvent(keyCode) -- rework
     end
 end
 
-function Menu:read(arg1, arg2, arg3)
+-- The last argument may be a table of field options: text is the starting text; filter is a Lua
+-- pattern or function the text must match before Enter is accepted; pwchar is shown in place of
+-- each typed character.
+function Menu:read(arg1, arg2, arg3, arg4)
+    local opts = arg4 or (type(arg3) == "table" and arg3) or (type(arg2) == "table" and arg2) or {}
     local x,y, option, maxLength
     if type(arg1) =="number" and type(arg2) == "number" then
         x,y,maxLength = tonumber(arg1),tonumber(arg2),tonumber(arg3)
@@ -365,16 +370,20 @@ function Menu:read(arg1, arg2, arg3)
     end
     
     tty.setViewport(maxLength, 1, x-1,y-1)
-    local core = require("core/cursor")
-    local oldC = core.vertical.clear
-    core.vertical.clear = "\27[K"
-    io.write("\27[7m\27[2J")
-    local read = io.read()
+    local oldCursor = tty.window.cursor
+    -- Restore the terminal even if the read fails, or it stays a one-line window.
+    local ok, read = pcall(function()
+        io.write("\27[7m\27[2J")
+        -- nowrap scrolls the text sideways within the field; dobreak=false keeps Enter from
+        -- starting a new line, which would scroll the field blank.
+        return term.read({nowrap = true, next = opts.text}, false, nil, opts.pwchar, opts.filter)
+    end)
     io.write("\27[0m")
-    core.vertical.clear = oldC
+    tty.window.cursor = oldCursor
     tty.setViewport(table.unpack(oV))
     if option then option:_queueRedraw() end
-    return read
+    if not ok then error(read, 0) end
+    return read and (read:gsub("\n$", ""))
 end
 
 qmenu.Menu = Menu

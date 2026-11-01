@@ -97,10 +97,11 @@ local function create_cursor(history, ops)
       end
     end
     function cursor:echo(arg, ...)
-      if pwchar and type(arg) == "string" and #arg > 0 and not arg:match("^\27") then -- "" is used for scrolling
-        arg = pwchar(arg)
-      elseif nobreak and arg == "\n" then
+      -- The newline is checked first, so a password field doesn't mask Enter into one more pwchar.
+      if nobreak and arg == "\n" then
         arg = ""
+      elseif pwchar and type(arg) == "string" and #arg > 0 and not arg:match("^\27") then -- "" is used for scrolling
+        arg = pwchar(arg)
       end
       return self.super.echo(self, arg, ...)
     end
