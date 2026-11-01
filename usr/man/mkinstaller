@@ -1,0 +1,36 @@
+NAME
+  mkinstaller - make an installer floppy that sets up a computer with no OS
+
+SYNOPSIS
+  mkinstaller DEST [PROJECT...] [--os] [--label=TEXT] [--name=PATTERN [--first=N]] [--auto=SECONDS]
+
+DESCRIPTION
+  Writes an installer to the floppy mounted at DEST. A computer with that floppy and an empty
+  hard drive boots it from the BIOS, installs the chosen packages, makes the hard drive its
+  boot drive and reboots into it.
+
+  Each PROJECT is a folder with a bundle.cfg, as for bundle pack. Two extra keys say what the
+  installer does at first boot:
+    {name="mill", paths={"etc","usr"}, enable={"worker"}, hostname=true}
+  enable lists rc daemons to enable; hostname=true asks for a hostname.
+
+  A hands-off install beeps twice when done and waits for the floppy to come out, then reboots.
+  A computer with no screen or keyboard always installs hands-off.
+
+OPTIONS
+  --os
+    Also pack this OS in osinstall's groups. /home, /tmp, /mnt and machine state (hostname,
+    tnet.hosts, rc.cfg, filesystem.cfg, .qboot) are never packed.
+
+  --label=TEXT
+    The label given to a drive that has none; also names the installer.
+
+  --name=PATTERN
+    Name each computer from a pattern with one number, e.g. mill-%02d. A writable floppy
+    counts up after each install; a read-only one asks for a name instead.
+
+  --first=N
+    The first number for --name (default 1).
+
+  --auto=SECONDS
+    Install the ticked packages after that many seconds unless a key is pressed.

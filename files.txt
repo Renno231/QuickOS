@@ -108,6 +108,8 @@
 /lib/uuid.lua
 /lib/vt100.lua
 /qmenu.lua
+/usr/bin/bundle.lua
+/usr/bin/mkinstaller.lua
 /usr/bin/screens.lua
 /usr/lib/api.lua
 /usr/lib/cbor.lua
@@ -132,6 +134,7 @@
 /usr/lib/tnet.lua
 /usr/man/address
 /usr/man/alias
+/usr/man/bundle
 /usr/man/cat
 /usr/man/cd
 /usr/man/clear
@@ -150,6 +153,7 @@
 /usr/man/lua
 /usr/man/man
 /usr/man/mkdir
+/usr/man/mkinstaller
 /usr/man/mount
 /usr/man/mv
 /usr/man/pastebin
@@ -166,3 +170,4 @@
 /usr/man/umount
 /usr/man/uptime
 /usr/man/wget
+/usr/share/installer/init.lua

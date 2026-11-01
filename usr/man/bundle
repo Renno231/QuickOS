@@ -1,0 +1,29 @@
+NAME
+  bundle - pack files into one bundle and unpack it on another computer
+
+SYNOPSIS
+  bundle pack DIR [--out=FILE] [--raw] [--sfx]
+  bundle pack FILE PATH... [--root=DIR] [--raw] [--sfx]
+  bundle unpack FILE [--root=DIR]
+  bundle list FILE
+
+DESCRIPTION
+  pack DIR packs a project folder as its bundle.cfg describes, a serialized table:
+    {name="mill", paths={"etc","usr"}, exclude={"usr/lib/lz4.lua"}}
+  name defaults to the folder name; the bundle is written beside the folder as NAME.bundle.
+  pack FILE PATH... packs each PATH relative to --root (default: the working directory).
+  unpack writes every file under --root (default: /). list prints the files in a bundle.
+
+OPTIONS
+  --out=FILE
+    Write the bundle of a project folder to FILE.
+
+  --raw
+    Write an uncompressed bundle. Bundles are LZ4-compressed by default.
+
+  --sfx
+    Write a raw bundle with a small unpacker in front, as NAME.lua. Run it on a computer that
+    has nothing installed: NAME.lua [--root=DIR].
+
+  --root=DIR
+    The folder paths are packed from or unpacked into.
