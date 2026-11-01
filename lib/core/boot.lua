@@ -91,9 +91,10 @@ dofile("base.lua")
 
 function shell()
   local term = require("term")
-  pwd = io.open("/home/.pwd")
+  local pwd = io.open("/home/.pwd")
   if pwd ~= nil then
     local pass = pwd:read("*a");
+    pwd:close()
     gpu.fill(1, baseY+1, w, 1, " ")
     gpu.fill(1, baseY+3, w, 1, " ")
     gpu.set((w-68)/2+1, baseY+1, "Enter terminal password: ")
