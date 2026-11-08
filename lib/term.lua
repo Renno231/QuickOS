@@ -93,7 +93,7 @@ local function create_cursor(history, ops)
     if type(pwchar) == "string" then
       local pwchar_text = pwchar
       pwchar = function(text)
-        return text:gsub(".", pwchar_text)
+        return text:gsub("[^\n]", pwchar_text) -- the line break stays a line break
       end
     end
     function cursor:echo(arg, ...)
