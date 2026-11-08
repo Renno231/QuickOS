@@ -104,13 +104,18 @@ local function announce()
     end
 end
 
-local function query(kind, value, timeout, first)
+local function ask(kind, value)
     listen()
     nextQuery = nextQuery + 1
     local qid = tostring(nextQuery)
     local q = {results = {}}
     pending[qid] = q
     broadcast("Q", qid, kind, value or "")
+    return qid, q
+end
+
+local function query(kind, value, timeout, first)
+    local qid, q = ask(kind, value)
     local deadline = computer.uptime() + (timeout or 1)
     local ok, err = pcall(function()
         repeat os.sleep(0.05) until computer.uptime() >= deadline or (first and next(q.results))
@@ -179,11 +184,25 @@ function disco.resolve(name, timeout)
 end
 
 -- Every host that answers within timeout, optionally only those offering service.
-function disco.find(service, timeout)
+local function sorted(results)
     local list = {}
-    for _, e in pairs(query(service and "service" or "all", service, timeout or 1)) do list[#list + 1] = e end
+    for _, e in pairs(results) do list[#list + 1] = e end
     table.sort(list, function(a, b) return a.name < b.name end)
     return list
+end
+
+function disco.find(service, timeout)
+    return sorted(query(service and "service" or "all", service, timeout or 1))
+end
+
+-- disco.find without waiting: returns at once and calls callback(list) after timeout seconds.
+function disco.findAsync(service, timeout, callback)
+    local qid, q = ask(service and "service" or "all", service)
+    event.timer(timeout or 1, function()
+        pending[qid] = nil
+        release()
+        callback(sorted(q.results))
+    end)
 end
 
 -- Hosts heard recently (announcements and answers) that have not expired.

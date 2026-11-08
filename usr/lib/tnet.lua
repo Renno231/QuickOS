@@ -181,6 +181,9 @@ local function initRouter()
             
             if packet_type == "connected" then
                 conn.connected = true
+                local ready = conn.on_ready
+                conn.on_ready = nil
+                if ready then ready(true) end
             elseif packet_type == "disconnect" then
                 conn:close()
             elseif packet_type == "serialLib" then
@@ -371,17 +374,32 @@ function Connection:send(msg, ...)
     return self.msg_id
 end 
 
-function Connection:init(timeout)
+-- Asks the peer to accept the connection. Without a callback, waits up to timeout seconds and
+-- returns true, or false and "no response". With one, returns at once and later calls
+-- callback(true), or callback(false, "no response") after timeout.
+function Connection:init(timeout, callback)
     timeout = timeout or 1
     local start_time = computer.uptime()
-    
+
     local ninfo = table.concat({self.sys, self.id, "0", pTypeRev["connect"]}, ",")
     pcall(self.modem.open, self.port)
+    if callback then
+        local timer
+        timer = event.timer(timeout, function()
+            if self.on_ready then
+                self.on_ready = nil
+                callback(false, "no response")
+            end
+        end)
+        self.on_ready = function()
+            event.cancel(timer)
+            callback(true)
+        end
+    end
     pcall(self.modem.send, self.address, self.port, self.wake, ninfo)
-    
-    -- local loop_count = 0
+    if callback then return end
+
     while computer.uptime() - start_time < timeout do
-        -- loop_count = loop_count + 1
         if self.connected then
             return true
         end

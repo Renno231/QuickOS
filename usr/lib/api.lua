@@ -200,18 +200,40 @@ end
 local RemoteProxy = {}
 RemoteProxy.__index = RemoteProxy
 -- modem: the address of the card that reaches address; the primary card when omitted.
+local newProxy
+
 function api.connect(endpointName, port, address, wakeKey, timeout, fnKeys, modem)
     timeout = timeout or 5
-    
+
     local conn = tnet.connect(address, port, wakeKey, "api_client", nil, nil, modem)
     conn.serial = {lib = "serialization", encode = "serialize", decode = "unserialize"}
-    
+
     local success, err = conn:init(timeout)
     if not success then
         conn:close(true)
         error("Failed to connect to " .. address .. ":" .. port .. " - " .. (err or "timeout"))
     end
-    
+    return newProxy(conn, endpointName, port, address, timeout, fnKeys)
+end
+
+-- api.connect without waiting: returns at once and later calls callback(proxy), or
+-- callback(nil, reason) when the endpoint does not answer within timeout seconds. Pair it with
+-- proxy:async(callback).fn(...) so a program with a UI never waits on the network.
+function api.connectAsync(endpointName, port, address, callback, wakeKey, timeout, fnKeys, modem)
+    timeout = timeout or 5
+    local conn = tnet.connect(address, port, wakeKey, "api_client", nil, nil, modem)
+    conn.serial = {lib = "serialization", encode = "serialize", decode = "unserialize"}
+    conn:init(timeout, function(success, err)
+        if not success then
+            conn:close(true)
+            callback(nil, "Failed to connect to " .. address .. ":" .. port .. " - " .. (err or "timeout"))
+            return
+        end
+        callback(newProxy(conn, endpointName, port, address, timeout, fnKeys))
+    end)
+end
+
+function newProxy(conn, endpointName, port, address, timeout, fnKeys)
     local proxy = setmetatable({
         conn = conn,
         endpoint = endpointName,
@@ -344,8 +366,12 @@ function RemoteProxy:callRemoteFunction(fnName, callKey, asyncCallback, ...)
     local call = {responseType = RPC_TYPE_RESPONSE, callback = isAsync and asyncCallback or nil}
     self.pending[callId] = call
     if isAsync then
-        -- Preserve the existing silent async timeout, but release its pending slot.
-        call.timer = require("event").timer(10, function() self.pending[callId] = nil end)
+        -- An unanswered call ends like a waiting one: callback(false, reason).
+        call.timer = require("event").timer(10, function()
+            if self.pending[callId] ~= call then return end
+            self.pending[callId] = nil
+            asyncCallback(false, "Timeout calling remote function: " .. fnName)
+        end)
     end
     
     local args = table.pack(...)
