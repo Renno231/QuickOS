@@ -46,8 +46,8 @@ function api.expose(name, target, port, keys, modem)
         if type(fnDef) == "function" then
             endpoint:exposeFunction(fnName, "Undocumented", keys and keys[fnName])
         elseif type(fnDef) == "table" and #fnDef >= 2 and type(fnDef[1]) == "function" and type(fnDef[2]) == "string" then
+            lib[fnName] = fnDef[1] -- unwrap first: exposeFunction checks lib[fnName] is a function
             endpoint:exposeFunction(fnName, fnDef[2], keys and keys[fnName])
-            lib[fnName] = fnDef[1]
         end
     end
     
