@@ -70,21 +70,34 @@ local function writer(file, block)
     if not done then error(putWhy or 'Unable to write LZ4 block', 0) end
     breathe()
   end
+  -- A failed write is returned, not raised: buffer's flush and close stop at a raised error and
+  -- would leave the file open. Once a write has failed the frame is broken, and close says so.
+  local broken
   function stream:write(data)
+    if broken then return nil, broken end
     pending = pending .. data
-    while #pending >= block do
-      put(pending:sub(1, block)); pending = pending:sub(block + 1)
-    end
+    local done, why = pcall(function()
+      while #pending >= block do
+        put(pending:sub(1, block)); pending = pending:sub(block + 1)
+      end
+    end)
+    if not done then broken = why; return nil, why end
     return true
   end
   -- The last block and the end mark are written here, so a failed write surfaces from close; the
   -- file closes either way.
   function stream:close()
-    local done, putWhy = pcall(function()
-      if #pending > 0 then put(pending) end
-      local ended, endWhy = file:write('\0\0\0\0')
-      if not ended then error(endWhy or 'Unable to write LZ4 end mark', 0) end
-    end)
+    local done, putWhy = not broken, broken
+    if done then
+      done, putWhy = pcall(function()
+        if #pending > 0 then put(pending) end
+        local ended, endWhy = file:write('\0\0\0\0')
+        if not ended then error(endWhy or 'Unable to write LZ4 end mark', 0) end
+        -- Closing a file flushes it without saying whether that worked.
+        local flushed, flushWhy = file:flush()
+        if not flushed then error(flushWhy or 'Unable to write LZ4 frame', 0) end
+      end)
+    end
     pending = ''
     local closed, closeWhy = file:close()
     if not done then error(putWhy, 0) end

@@ -13,6 +13,7 @@ DESCRIPTION
   name defaults to the folder name; the bundle is written beside the folder as NAME.bundle.
   pack FILE PATH... packs each PATH relative to --root (default: the working directory).
   unpack writes every file under --root (default: /). list prints the files in a bundle.
+  A bundle that cannot be finished, on a full disk say, is removed.
 
 OPTIONS
   --out=FILE

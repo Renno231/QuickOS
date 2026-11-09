@@ -54,6 +54,8 @@ local function pack(root,compress,skip)
   fs.makeDirectory(fs.path(file))
   local out,err=(compress and frame or io).open(file,"wb");if not out then error(file..": "..tostring(err),0) end
   local count=0
+  -- A full disk shows up as a failed write, so every write is checked.
+  local function put(...) local ok,why=out:write(...);if not ok then error(why or "write failed",0) end end
   -- rel is the file's path under root; as is the path it is stored under.
   local function add(rel,as)
     local full=fs.concat(root,rel)
@@ -64,13 +66,16 @@ local function pack(root,compress,skip)
       return
     end
     local f=assert(io.open(full,"rb"))
-    out:write(string.pack(">s2I4",as,fs.size(full)))
-    for chunk in function() return f:read(8192) end do out:write(chunk) end
-    f:close();print(as);count=count+1
+    local copied,why=pcall(function()
+      put(string.pack(">s2I4",as,fs.size(full)))
+      for chunk in function() return f:read(8192) end do put(chunk) end
+    end)
+    f:close();if not copied then error(why,0) end
+    print(as);count=count+1
     os.sleep(0)
   end
   local done,err=pcall(function()
-    out:write("OCB1")
+    put("OCB1")
     -- An entry is a path, or {path,place} to store it under another path.
     for _,entry in ipairs(paths) do
       local path,place=entry,nil
@@ -84,9 +89,12 @@ local function pack(root,compress,skip)
       end
       add(rel,place or rel)
     end
-    out:write(string.pack(">s2",""))
+    put(string.pack(">s2",""))
+    local flushed,flushWhy=out:flush();if not flushed then error(flushWhy or "write failed",0) end
   end)
-  out:close()
+  -- Closing writes what is still buffered, so it can fail too; a failed bundle is removed.
+  local closed,closeWhy=pcall(out.close,out)
+  if done and not closed then done,err=false,closeWhy end
   if not done then fs.remove(file);error(err,0) end
   return count
 end
