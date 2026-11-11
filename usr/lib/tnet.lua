@@ -19,6 +19,19 @@ local function card(address)
     return component.proxy(address)
 end
 
+-- Sends as modem.send, checking for a local peer first: OC never hands a card a message sent
+-- to its own address, so one to this card, on a port open on it, is pushed as the
+-- modem_message signal the card would raise. Programs on one computer reach each other so.
+local function send(modem, address, port, ...)
+    if address ~= modem.address then return modem.send(address, port, ...) end
+    if modem.isOpen(port) then computer.pushSignal("modem_message", address, address, port, 0, ...) end
+    return true
+end
+-- Both ends of a local connection share one table here and the id it was made with: the
+-- accepting end is kept under that id with "<" added. A local packet carries its sender's id,
+-- so it is for the other end.
+local function otherEnd(id) return id:sub(-1) == "<" and id:sub(1, -2) or id .. "<" end
+
 -- Packet type lookup table for shorter messages
 local pTypeRev, pTypes = {}, {
     ['c'] = "connect",
@@ -134,6 +147,7 @@ local function initRouter()
         packet_type = pTypes[packet_type] or packet_type
         local args = pack(...)
         local listener = listeners[localPort]
+        local here = senderAddress == selfAddress -- a local peer (send, above)
         if packet_type == "connect" and listener and listener.modem.address == selfAddress then
             if listener.wakeValidator then
                 local valid, result = pcall(listener.wakeValidator, wake)
@@ -142,11 +156,12 @@ local function initRouter()
                 end
             end
 
-            local ack_ninfo = table.concat({sys_name, conn_id, "0", pTypeRev["connected"]}, ",")
-            local old = connections[conn_id]
+            local id = here and otherEnd(conn_id) or conn_id
+            local ack_ninfo = table.concat({sys_name, id, "0", pTypeRev["connected"]}, ",")
+            local old = connections[id]
             if old and old.address == senderAddress then
                 -- The same connect heard again (a repeat or a resend), even after data: answer it again.
-                pcall(old.modem.send, senderAddress, localPort, wake, ack_ninfo)
+                pcall(send, old.modem, senderAddress, localPort, wake, ack_ninfo)
                 return
             end
             if old then old:close(true) end  -- another peer took this id; the old connection ends
@@ -157,20 +172,20 @@ local function initRouter()
                 port    = localPort,
                 wake    = wake,
                 sys     = sys_name,
-                id      = conn_id,
+                id      = id,
                 connected = true,          -- because server side is already live
                 wakeValidator = listener.wakeValidator
             })
             
-            connections[conn_id] = conn
-            pcall(conn.modem.send, senderAddress, localPort, wake, ack_ninfo)
+            connections[id] = conn
+            pcall(send, conn.modem, senderAddress, localPort, wake, ack_ninfo)
             if listener.callback then
                 pcall(listener.callback, conn)
             end
             return
         end
         
-        local conn = connections[conn_id]
+        local conn = connections[here and otherEnd(conn_id) or conn_id]
         if conn and conn.address == senderAddress and conn.sys == sys_name and conn.modem.address == selfAddress then
             if conn.wakeValidator then
                 local valid, result = pcall(conn.wakeValidator, wake)
@@ -356,14 +371,14 @@ function Connection:send(msg, ...)
             single = false
             local totalFrags = math.ceil(dataSize / dataMax)
             for cFrag = 1, totalFrags do
-                success, failed = pcall(self.modem.send, self.address, self.port, self.wake,
+                success, failed = pcall(send, self.modem, self.address, self.port, self.wake,
                                         ninfo..","..tostring(cFrag)..","..tostring(totalFrags), msg, args[1]:sub((cFrag-1) * dataMax + 1, cFrag * dataMax))
                 if not success then break end
             end
         end
     end
     if single then
-        success, failed = pcall(self.modem.send, self.address, self.port, self.wake, ninfo, msg, table.unpack(args,1,args.n))
+        success, failed = pcall(send, self.modem, self.address, self.port, self.wake, ninfo, msg, table.unpack(args,1,args.n))
     end
     if not success then
         if self.on_error then
@@ -396,7 +411,7 @@ function Connection:init(timeout, callback)
             callback(true)
         end
     end
-    pcall(self.modem.send, self.address, self.port, self.wake, ninfo)
+    pcall(send, self.modem, self.address, self.port, self.wake, ninfo)
     if callback then return end
 
     while computer.uptime() - start_time < timeout do
@@ -412,7 +427,7 @@ function Connection:close(quiet)
     local wasConnected = self.connected
     if self.connected and not quiet then
         local ninfo = table.concat({self.sys, self.id, "0", pTypeRev["disconnect"]}, ",")
-        pcall(self.modem.send, self.address, self.port, self.wake, ninfo)
+        pcall(send, self.modem, self.address, self.port, self.wake, ninfo)
     end
     self.default_callback = nil
     connections[self.id] = nil
@@ -428,7 +443,7 @@ function Connection:serialLib(lib)
     self.serial = {lib = lib, encode = s.encode, decode = s.decode}
     if self.connected then
         local ninfo = table.concat({self.sys, self.id, "0", pTypeRev["serialLib"]}, ",")
-        pcall(self.modem.send, self.address, self.port, self.wake, ninfo, lib)
+        pcall(send, self.modem, self.address, self.port, self.wake, ninfo, lib)
     end
 end
 
