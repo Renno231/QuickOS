@@ -18,9 +18,20 @@ function loadfile(filename, ...)
       end
       break
     end
-    buffer[#buffer + 1] = data
+    if data ~= "" then -- "" from the reader would end the chunk
+      buffer[#buffer + 1] = data
+    end
   end
-  return load(table.concat(buffer), "=" .. filename, ...)
+  -- The pieces go to load one by one (read first: a read in load's reader cannot yield) and are
+  -- let go as it takes them, so the file is never joined (a large table.concat cannot collect
+  -- garbage to grow) and what is left of it shrinks while it is parsed.
+  local i = 0
+  return load(function()
+    i = i + 1
+    local data = buffer[i]
+    buffer[i] = nil
+    return data
+  end, "=" .. filename, ...)
 end
 
 function dofile(filename)
