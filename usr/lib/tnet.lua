@@ -532,13 +532,20 @@ function Bucket:detach()
     return self
 end
 
+-- Closes every member, then raises what any of them raised: one failing does not keep the others
+-- open, and the program closing the bucket sees the failure.
 function Bucket:close(quiet)
     if not buckets[self] then return end
     buckets[self] = nil
+    local failed
     for member in pairs(self.members) do
         self.members[member] = nil
         member.bucket = nil
-        pcall(member.close, member, quiet)
+        local ok, err = pcall(member.close, member, quiet)
+        if not ok then failed = (failed and failed .. "\n" or "") .. tostring(err) end
+    end
+    if failed then
+        error(tostring(self.name or "bucket") .. " did not close cleanly: " .. failed, 0)
     end
 end
 
@@ -630,7 +637,11 @@ end
 
 -- Closes every bucket, connection and listener on this computer.
 function tnet.shutdown(quiet)
-    for bucket in pairs(buckets) do bucket:close(quiet) end
+    local failed
+    for bucket in pairs(buckets) do
+        local ok, err = pcall(bucket.close, bucket, quiet)
+        if not ok then failed = (failed and failed .. "\n" or "") .. tostring(err) end
+    end
     for id, conn in pairs(connections) do
         conn:close(quiet)
         connections[id] = nil
@@ -639,6 +650,7 @@ function tnet.shutdown(quiet)
         tnet.stopListening(port)
     end
     stopRouter()
+    if failed then error(failed, 0) end
 end
 
 return tnet

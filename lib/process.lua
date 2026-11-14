@@ -140,7 +140,9 @@ function process.internal.close(thread, result)
   while pdata.handles[1] do
     local h = table.remove(pdata.handles)
     if h.close then
-      pcall(h.close, h)
+      -- The program has ended, so nothing else would see what its handles raise on closing.
+      local ok, err = pcall(h.close, h)
+      if not ok then io.stderr:write(tostring(err), "\n") end
     end
   end
   process.list[thread] = nil
